@@ -1,3 +1,17 @@
+## Project defined
+
+# Extensions
+*.log
+*.bat
+*.ini
+
+# Folders
+_misc
+build
+
+
+## C++ Template defaults
+
 # Prerequisites
 *.d
 

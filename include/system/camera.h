@@ -43,6 +43,7 @@ namespace ey3 {
 			int32_t imageRotation;
 			bool loaded = false;
 			bool opened = false;
+			bool permissionRequested = false;
 
 			void loadFrameSize(ACameraMetadata* cameraMetadata);
 		public:
@@ -54,10 +55,24 @@ namespace ey3 {
 
 			void handleCmd(int32_t cmd, android_app* app);
 			bool isLoaded();
+			bool isOpened();
 			int32_t getFrameWidth();
 			int32_t getFrameHeight();
 			int32_t getImageRotation();
 			std::string getFacingCameraId(CameraFacing cameraFacing);
+
+			/**
+			 * android.permission.CAMERA is a dangerous permission (API 23+): declaring
+			 * it in AndroidManifest.xml is not enough, the user must grant it at
+			 * runtime. EY3 apps have no Java Activity subclass (NativeActivity,
+			 * hasCode="false"), so this is done via JNI calls into the existing
+			 * Activity object instead of overriding onRequestPermissionsResult.
+			 * There is no async callback available without a custom Java class, so
+			 * callers should poll hasPermission() (e.g. retry open() every frame
+			 * while !isOpened()) until the user responds to the system dialog.
+			 */
+			bool hasPermission();
+			void requestPermission();
 	};
 }
 

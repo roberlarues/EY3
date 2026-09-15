@@ -19,7 +19,6 @@ void android_main(struct android_app* app) {
 
 	Camera camera(app);
 	engine.getCmdHandler()->addListener(&camera);
-	camera.open(CameraFacing::BACK, 640, 480);
 
 	CameraView cameraView(640 * 2, 480);
 	engine.getRenderer()->addRenderizable(&cameraView);
@@ -32,6 +31,13 @@ void android_main(struct android_app* app) {
 		engine.pollEvents();
 
 		if (engine.isInForeground()) {
+			// android.permission.CAMERA is granted asynchronously by the user via
+			// the system dialog; retry until isOpened() succeeds. open() is a cheap
+			// no-op once already open, or while waiting on the pending permission.
+			if (!camera.isOpened()) {
+				camera.open(CameraFacing::BACK, 640, 480);
+			}
+
 			if (camera.isLoaded()) {
 				if (camera.getFrame(frame)) {
 					frame = orbTest.processFrame(frame);

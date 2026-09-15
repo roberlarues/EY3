@@ -43,11 +43,56 @@ Camera::~Camera() {
 	close();
 }
 
+bool Camera::hasPermission() {
+	JNIEnv* env;
+	app->activity->vm->AttachCurrentThread(&env, nullptr);
+
+	jclass activityClass = env->GetObjectClass(app->activity->clazz);
+	jmethodID checkSelfPermission = env->GetMethodID(activityClass, "checkSelfPermission", "(Ljava/lang/String;)I");
+	jstring permission = env->NewStringUTF("android.permission.CAMERA");
+
+	jint result = env->CallIntMethod(app->activity->clazz, checkSelfPermission, permission);
+
+	env->DeleteLocalRef(permission);
+	env->DeleteLocalRef(activityClass);
+
+	return result == 0; // PackageManager.PERMISSION_GRANTED == 0
+}
+
+void Camera::requestPermission() {
+	LOGI("Requesting camera permission");
+
+	JNIEnv* env;
+	app->activity->vm->AttachCurrentThread(&env, nullptr);
+
+	jclass activityClass = env->GetObjectClass(app->activity->clazz);
+	jmethodID requestPermissions = env->GetMethodID(activityClass, "requestPermissions", "([Ljava/lang/String;I)V");
+
+	jclass stringClass = env->FindClass("java/lang/String");
+	jobjectArray permissions = env->NewObjectArray(1, stringClass, env->NewStringUTF("android.permission.CAMERA"));
+
+	env->CallVoidMethod(app->activity->clazz, requestPermissions, permissions, 0);
+
+	env->DeleteLocalRef(permissions);
+	env->DeleteLocalRef(stringClass);
+	env->DeleteLocalRef(activityClass);
+}
+
 bool Camera::open(CameraFacing cameraFacing, int32_t cameraWidth, int32_t cameraHeight) {
 	if (opened) {
 		LOGE("This camera is already open!");
 		return false;
 	}
+
+	if (!hasPermission()) {
+		if (!permissionRequested) {
+			LOGW("Camera permission not granted, requesting it from the user");
+			requestPermission();
+			permissionRequested = true;
+		}
+		return false;
+	}
+
 	LOGI("Opening camera");
 
 	this->cameraFacing = cameraFacing;
@@ -355,6 +400,10 @@ void Camera::handleCmd(int32_t cmd, android_app* app) {
 
 bool Camera::isLoaded() {
 	return loaded;
+}
+
+bool Camera::isOpened() {
+	return opened;
 }
 
 std::string Camera::getFacingCameraId(CameraFacing cameraFacing) {

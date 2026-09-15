@@ -252,7 +252,7 @@ bool Camera::getFrame(OutputArray out) {
 	int32_t colorFormat;
 	if ( (uvPixelStride == 2) && (uvPlaneDist == 1) && (yLen == frameWidth * frameHeight) && (uLen == ((yLen / 2) - 1)) && (uLen == vLen) ) {
 		colorFormat = COLOR_FormatYUV420_NV21;
-	} else if ( (uvPixelStride == 1) && (uvPlaneDist = vLen) && (yLen == frameWidth * frameHeight) && (uLen == yLen / 4) && (uLen == vLen) ) {
+	} else if ( (uvPixelStride == 1) && (uvPlaneDist == vLen) && (yLen == frameWidth * frameHeight) && (uLen == yLen / 4) && (uLen == vLen) ) {
 		colorFormat = COLOR_FormatYUV420_YV12;
 	} else {
 		colorFormat = COLOR_FormatUnknown;

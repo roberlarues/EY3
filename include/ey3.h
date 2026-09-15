@@ -6,7 +6,6 @@
 #include "shader.h"
 #include "texture.h"
 #include "asset_loader.h"
-#include "camera.h"
 #include "cmd_handler.h"
 #include "cmd_listener.h"
 #include "engine.h"
@@ -14,6 +13,10 @@
 #include "input_listener.h"
 #include "log.h"
 #include "background.h"
+
+#ifdef EY3_WITH_CV
+#include "camera.h"
 #include "camera_view.h"
+#endif // EY3_WITH_CV
 
 #endif // EY3_H

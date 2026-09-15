@@ -2,6 +2,7 @@
 #define EY3ENGINE_H
 
 #include <android_native_app_glue.h>
+#include <chrono>
 
 #include "input_handler.h"
 #include "cmd_handler.h"
@@ -20,6 +21,8 @@ namespace ey3 {
 			CmdHandler cmdHandler;
 			bool foreground = false;
 			bool terminated = false;
+			std::chrono::steady_clock::time_point lastFrameTime;
+			float deltaTime = 0.0f;
 
 		public:
 			Engine(struct android_app* app);
@@ -33,6 +36,7 @@ namespace ey3 {
 			CmdHandler* getCmdHandler();
 			bool isInForeground();
 			bool hasTerminated();
+			float getDeltaTime();
 	};
 
 }

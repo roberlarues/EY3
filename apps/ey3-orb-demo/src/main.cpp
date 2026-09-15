@@ -2,7 +2,6 @@
 #include <android_native_app_glue.h>
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/videoio.hpp>
 #include <ey3.h>
 #include "orbTest.h"
 

@@ -46,8 +46,8 @@ add_custom_command(OUTPUT ${LIBNAME}.unsigned.apk
 	COMMENT "Building apk")
 
 add_custom_command(OUTPUT ${LIBNAME}.signed.apk
-	COMMAND jarsigner -keystore ${KEYSTORE}.keystore -sigalg SHA1withRSA -digestalg SHA1 -storepass ${STOREPASS} -keypass ${KEYPASS} -signedjar ${LIBNAME}.signed.apk ${LIBNAME}.unsigned.apk ${KEYALIAS}
-	DEPENDS ${LIBNAME}.unsigned.apk
+	COMMAND jarsigner -keystore ${CMAKE_BINARY_DIR}/${KEYSTORE}.keystore -sigalg SHA256withRSA -digestalg SHA-256 -storepass ${STOREPASS} -keypass ${KEYPASS} -signedjar ${LIBNAME}.signed.apk ${LIBNAME}.unsigned.apk ${KEYALIAS}
+	DEPENDS ${LIBNAME}.unsigned.apk ${CMAKE_BINARY_DIR}/${KEYSTORE}.keystore
 	COMMENT "Signing APK")
 	
 add_custom_command(OUTPUT ${LIBNAME}.apk 

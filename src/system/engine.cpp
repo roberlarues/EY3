@@ -16,6 +16,8 @@ Engine::Engine(struct android_app* app): app(app) {
 	app->userData = this;
     app->onAppCmd = handleCmdCallback;
 	app->onInputEvent = handleInputCallback;
+
+	lastFrameTime = std::chrono::steady_clock::now();
 }
 
 Engine::~Engine() {
@@ -44,10 +46,16 @@ void Engine::onInput(AInputEvent* event) {
 }
 
 void Engine::pollEvents() {
-	int ident, events;
+	auto now = std::chrono::steady_clock::now();
+	deltaTime = std::chrono::duration<float>(now - lastFrameTime).count();
+	lastFrameTime = now;
+
+	int events;
 	struct android_poll_source* source;
-	if ((ident=ALooper_pollAll(0, NULL, &events, (void**)&source)) >= 0) {
-		source->process(app, source);
+	while (ALooper_pollOnce(0, nullptr, &events, (void**)&source) >= 0) {
+		if (source != nullptr) {
+			source->process(app, source);
+		}
 	}
 }
 
@@ -72,6 +80,10 @@ bool Engine::isInForeground() {
 
 bool Engine::hasTerminated() {
 	return terminated;
+}
+
+float Engine::getDeltaTime() {
+	return deltaTime;
 }
 
 

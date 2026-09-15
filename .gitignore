@@ -7,7 +7,7 @@
 
 # Folders
 _misc
-build
+build*
 
 
 ## C++ Template defaults

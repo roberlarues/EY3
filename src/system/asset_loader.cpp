@@ -2,7 +2,9 @@
 #include <stdlib.h> // for malloc
 #include "log.h"
 
+#ifdef EY3_WITH_CV
 using namespace cv;
+#endif // EY3_WITH_CV
 using namespace ey3;
 
 AssetLoader::AssetLoader() {
@@ -40,6 +42,7 @@ const std::string AssetLoader::loadStringAsset(android_app* app, const char* ass
 }
 
 
+#ifdef EY3_WITH_CV
 Mat AssetLoader::loadImageAsset(android_app* app, const char* assetPath) {
 	LOGI("Loading asset %s", assetPath);
 
@@ -50,7 +53,7 @@ Mat AssetLoader::loadImageAsset(android_app* app, const char* assetPath) {
 		return emptyMat;
 	}
 
-	
+
 	AAsset* asset = AAssetManager_open(mgr, assetPath, AASSET_MODE_BUFFER);
 	if (asset == NULL) {
 		LOGI("Asset not found");
@@ -69,3 +72,4 @@ Mat AssetLoader::loadImageAsset(android_app* app, const char* assetPath) {
 	LOGI("Asset loaded ok");
 	return image;
 }
+#endif // EY3_WITH_CV

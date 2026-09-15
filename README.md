@@ -12,6 +12,8 @@ You may find useful this library if you are interested in the following characte
 You shouldn't use this library if you plan to build a typical app with java, material, views and all of these stuff. This has been created mainly to made quick experiments in Android with OpenCV and OpenGL.
 
 ## Pre-requisites
+See [doc/environment-setup.md](doc/environment-setup.md) for step-by-step install instructions (Arch Linux dev machine + Ubuntu CI).
+
 * [Java 8+](https://www.java.com)
 * [Android SDK 29+](https://developer.android.com/studio)
 * [Android NDK r21+](https://developer.android.com/ndk/)

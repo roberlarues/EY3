@@ -60,7 +60,7 @@ void Renderer::enable(android_app* app) {
 
 
 	const EGLint contextAttribs[] = {
-		EGL_CONTEXT_CLIENT_VERSION, 2,  //Request opengl ES2.0
+		EGL_CONTEXT_CLIENT_VERSION, 3,  //Request opengl ES3.0 (required by GLSL "#version 300 es" shaders and glGenVertexArrays)
 		EGL_NONE
 	};
 	context = eglCreateContext(display, config, nullptr, contextAttribs);

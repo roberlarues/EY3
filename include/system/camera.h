@@ -10,6 +10,7 @@
 #include <string>
 
 #include "cmd_listener.h"
+#include "window.h"
 
 namespace ey3 {
 
@@ -53,7 +54,7 @@ namespace ey3 {
 			void close();
 			bool getFrame(cv::OutputArray out);
 
-			void handleCmd(int32_t cmd, android_app* app);
+			void handleCmd(int32_t cmd, IWindow* window);
 			bool isLoaded();
 			bool isOpened();
 			int32_t getFrameWidth();

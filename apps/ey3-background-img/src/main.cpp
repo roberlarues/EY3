@@ -1,8 +1,7 @@
-#include <string>
 #include <android_native_app_glue.h>
-#include <opencv2/opencv.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 #include <ey3.h>
+
+#include "program.h"
 
 using namespace ey3;
 
@@ -13,22 +12,10 @@ using namespace ey3;
  */
 void android_main(struct android_app* app) {
 	LOGI("BEGIN Android Main");
-	Engine engine(app);
 
-	AssetLoader assetLoader;
-	cv::Mat image = assetLoader.loadImageAsset(app, "images/example.png");
-	cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
-	Background bg(image.ptr(), image.cols, image.rows);
-	engine.getRenderer()->addRenderizable(&bg);
-	
-	while (!engine.hasTerminated()) {
-		engine.pollEvents();
-
-		if (engine.isInForeground()) {
-			engine.getRenderer()->renderFrame();
-		}
-	}
+	WindowAndroid window(app);
+	Engine engine(&window);
+	runProgram(engine);
 
 	LOGI("END Android Main");
 }
-

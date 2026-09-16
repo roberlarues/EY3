@@ -3,7 +3,6 @@
 
 #include <string>
 #include <vector>
-#include <android_native_app_glue.h>
 
 #if __ANDROID_API__ >= 24
 #include <GLES3/gl32.h>
@@ -14,6 +13,8 @@
 #endif
 
 namespace ey3 {
+
+	class AssetLoader;
 
 	/**
 	 * Represents a combination of vertex and fragment shader, linked to a program
@@ -27,8 +28,8 @@ namespace ey3 {
 		public:
 			Shader();
 			virtual ~Shader();
-			void init(android_app* app, const char* vShader, const char* fShader);
-			void init(android_app* app);
+			void init(AssetLoader* assetLoader, const char* vShader, const char* fShader);
+			void init();
 			GLuint getProgram();
 	};
 }

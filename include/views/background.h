@@ -20,7 +20,7 @@ namespace ey3 {
 			GLubyte* pixels;
 		public:
 			Background(GLubyte* pixels, GLuint width, GLuint height);
-			void init(android_app* app);
+			void init(Renderer* renderer, AssetLoader* assetLoader);
 			void render();
 	};
 

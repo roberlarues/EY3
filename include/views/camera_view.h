@@ -1,5 +1,5 @@
-#ifndef EY3CAMERAVIEW_H 
-#define EY3CAMERAVIEW_H 
+#ifndef EY3CAMERAVIEW_H
+#define EY3CAMERAVIEW_H
 
 #include <opencv2/opencv.hpp>
 
@@ -23,11 +23,11 @@ namespace ey3 {
 
 		public:
 			CameraView(int32_t frameWidth, int32_t frameHeigh);
-			void init(android_app* app);
+			void init(Renderer* renderer, AssetLoader* assetLoader);
 			void render();
 			void setFrame(cv::Mat* frame);
 	};
 
 }
 
-#endif // EY3CAMERAVIEW_H 
+#endif // EY3CAMERAVIEW_H

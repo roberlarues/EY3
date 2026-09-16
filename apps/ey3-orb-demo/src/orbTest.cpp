@@ -17,19 +17,9 @@ OrbTest::OrbTest(int32_t width, int32_t height): hasRefImage(false), captureNext
 	putText(refImage, text, Point(width/2.f, height/2.f) - Point(textSize.width/2.f, textSize.height/2.f), fontFace, fontScale, Scalar::all(255), thickness, 8);
 }
 
-void OrbTest::handleInput(AInputEvent* event) {
-	if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION) {
-		switch(AInputEvent_getSource(event)){
-			case AINPUT_SOURCE_TOUCHSCREEN:
-				int action = AKeyEvent_getAction(event) & AMOTION_EVENT_ACTION_MASK;
-				switch(action){
-					case AMOTION_EVENT_ACTION_DOWN: {
-						captureNext = true;
-						break;
-					}
-				}
-			break;
-		}
+void OrbTest::handleInput(const InputEvent& event) {
+	if (event.type == InputEventType::POINTER_DOWN) {
+		captureNext = true;
 	}
 }
 

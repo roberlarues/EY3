@@ -13,7 +13,7 @@ namespace ey3 {
 		private:
 			std::vector< InputListener* > inputListeners;
 		public:
-			void handleInput(AInputEvent* event);
+			void handleInput(const InputEvent& event);
 			void addListener(InputListener* listener);
 			void removeListener(InputListener* listener);
 	};

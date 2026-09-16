@@ -1,7 +1,7 @@
-#ifndef EY3INPUTLISTENER_H 
+#ifndef EY3INPUTLISTENER_H
 #define EY3INPUTLISTENER_H
 
-#include <android_native_app_glue.h>
+#include "input_event.h"
 
 namespace ey3 {
 
@@ -11,9 +11,9 @@ namespace ey3 {
 	 */
 	class InputListener {
 		public:
-			virtual void handleInput(AInputEvent* event) = 0;
+			virtual void handleInput(const InputEvent& event) = 0;
 	};
 
 }
 
-#endif // EY3INPUTLISTENER_H 
+#endif // EY3INPUTLISTENER_H

@@ -39,20 +39,17 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fno-exceptions -Wall -fdiagn
 
 
 # EY3 source
+set(EY3_ROOT ${PROJECT_SOURCE_DIR})
+include(${PROJECT_SOURCE_DIR}/cmake/sources.cmake)
+
 set(EY3_SOURCES
-	src/graphics/renderer.cpp
-	src/graphics/shader.cpp
-	src/graphics/texture.cpp
-	src/system/asset_loader.cpp
-	src/system/engine.cpp
-	src/system/cmd_handler.cpp
-	src/system/input_handler.cpp
-	src/views/background.cpp)
+	${EY3_SHARED_SOURCES}
+	src/system/window_android.cpp
+	src/system/asset_loader_android.cpp
+	src/system/platform_context.cpp)
 
 if(EY3_WITH_CV)
-	list(APPEND EY3_SOURCES
-		src/system/camera.cpp
-		src/views/camera_view.cpp)
+	list(APPEND EY3_SOURCES src/system/camera.cpp)
 endif(EY3_WITH_CV)
 
 add_library(${LIBNAME} ${EY3_SOURCES})

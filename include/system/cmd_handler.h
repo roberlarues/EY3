@@ -13,7 +13,7 @@ namespace ey3 {
 		private:
 			std::vector<CmdListener*> cmdListeners;
 		public:
-			void handleCmd(int32_t cmd, android_app* app);
+			void handleCmd(int32_t cmd, IWindow* window);
 			void addListener(CmdListener* listener);
 			void removeListener(CmdListener* listener);
 	};

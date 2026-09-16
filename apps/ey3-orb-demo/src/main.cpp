@@ -15,7 +15,8 @@ using namespace ey3;
  */
 void android_main(struct android_app* app) {
 	LOGI("BEGIN Android Main");
-	Engine engine(app);
+	WindowAndroid window(app);
+	Engine engine(&window);
 
 	Camera camera(app);
 	engine.getCmdHandler()->addListener(&camera);
@@ -51,4 +52,3 @@ void android_main(struct android_app* app) {
 
 	LOGI("END Android Main");
 }
-

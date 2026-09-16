@@ -1,11 +1,15 @@
 #include "asset_loader.h"
-#include <stdlib.h> // for malloc
-#include "log.h"
 
+#include <android/asset_manager.h>
+#include <android_native_app_glue.h>
+
+#include "log.h"
+#include "platform_context.h"
+
+using namespace ey3;
 #ifdef EY3_WITH_CV
 using namespace cv;
 #endif // EY3_WITH_CV
-using namespace ey3;
 
 AssetLoader::AssetLoader() {
 }
@@ -13,22 +17,19 @@ AssetLoader::AssetLoader() {
 AssetLoader::~AssetLoader() {
 }
 
-void AssetLoader::loadAsset(android_app* app, char* assetPath) {
-}
-
-const std::string AssetLoader::loadStringAsset(android_app* app, const char* assetPath) {
+const std::string AssetLoader::loadStringAsset(const char* assetPath) {
 	LOGI("Loading asset %s", assetPath);
 
-	AAssetManager* mgr = app->activity->assetManager;
+	AAssetManager* mgr = PlatformContext::getAndroidApp()->activity->assetManager;
 	if (mgr == NULL) {
 		LOGE("AssetManager not loaded");
-		return NULL;
+		return std::string();
 	}
-	
+
 	AAsset* asset = AAssetManager_open(mgr, assetPath, AASSET_MODE_BUFFER);
 	if (asset == NULL) {
 		LOGE("Asset not found");
-		return NULL;
+		return std::string();
 	}
 
 	unsigned long size = AAsset_getLength64(asset);
@@ -37,28 +38,24 @@ const std::string AssetLoader::loadStringAsset(android_app* app, const char* ass
 	AAsset_close(asset);
 
 	const std::string str(buffer, size);
-	free(buffer);
+	delete[] buffer;
 	return str;
 }
 
-
 #ifdef EY3_WITH_CV
-Mat AssetLoader::loadImageAsset(android_app* app, const char* assetPath) {
+Mat AssetLoader::loadImageAsset(const char* assetPath) {
 	LOGI("Loading asset %s", assetPath);
 
-	AAssetManager* mgr = app->activity->assetManager;
+	AAssetManager* mgr = PlatformContext::getAndroidApp()->activity->assetManager;
 	if (mgr == NULL) {
 		LOGE("AssetManager not loaded");
-		Mat emptyMat;
-		return emptyMat;
+		return Mat();
 	}
-
 
 	AAsset* asset = AAssetManager_open(mgr, assetPath, AASSET_MODE_BUFFER);
 	if (asset == NULL) {
 		LOGI("Asset not found");
-		Mat emptyMat;
-		return emptyMat;
+		return Mat();
 	}
 
 	unsigned long size = AAsset_getLength64(asset);
@@ -67,6 +64,7 @@ Mat AssetLoader::loadImageAsset(android_app* app, const char* assetPath) {
 	AAsset_close(asset);
 
 	std::vector<uchar> fileBytes(buffer, buffer + size);
+	free(buffer);
 	Mat image = imdecode(fileBytes, IMREAD_COLOR);
 
 	LOGI("Asset loaded ok");

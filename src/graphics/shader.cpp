@@ -13,7 +13,7 @@ Shader::~Shader() {
 GLuint Shader::loadShader( GLenum type, const char *shaderSrc) {
 	GLuint shader;
 	GLint compiled;
-	
+
 	shader = glCreateShader(type);
 	if ( shader == 0 ) {
 		return 0;
@@ -22,7 +22,7 @@ GLuint Shader::loadShader( GLenum type, const char *shaderSrc) {
 	glShaderSource(shader, 1, &shaderSrc, NULL);
 	glCompileShader(shader);
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-	
+
 	if (!compiled) {
 		GLchar infoLog[1024];
 		glGetShaderInfoLog(shader, 1024, NULL, infoLog);
@@ -34,12 +34,10 @@ GLuint Shader::loadShader( GLenum type, const char *shaderSrc) {
 	return shader;
 }
 
-void Shader::init(android_app* app, const char* vShader, const char* fShader) {
-	AssetLoader assetLoader;
+void Shader::init(AssetLoader* assetLoader, const char* vShader, const char* fShader) {
+	const std::string vs = assetLoader->loadStringAsset(vShader);
+	const std::string fs = assetLoader->loadStringAsset(fShader);
 
-	const std::string vs = assetLoader.loadStringAsset(app, vShader);
-	const std::string fs = assetLoader.loadStringAsset(app, fShader);
-	
 	GLuint vertexShader = loadShader( GL_VERTEX_SHADER, vs.c_str() );
 	GLuint fragmentShader = loadShader( GL_FRAGMENT_SHADER, fs.c_str() );
 
@@ -52,12 +50,12 @@ void Shader::init(android_app* app, const char* vShader, const char* fShader) {
 
 	glAttachShader( programObject, vertexShader );
 	glAttachShader( programObject, fragmentShader );
-	
+
 	glLinkProgram( programObject );
 
 	GLint linked;
 	glGetProgramiv( programObject, GL_LINK_STATUS, &linked );
-	
+
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
@@ -73,7 +71,7 @@ void Shader::init(android_app* app, const char* vShader, const char* fShader) {
 	LOGI("Shader loaded OK");
 }
 
-void Shader::init(android_app* app) {
+void Shader::init() {
 
 	GLuint vertexShader = loadShader( GL_VERTEX_SHADER, DEFAULT_VS.c_str() );
 	GLuint fragmentShader = loadShader( GL_FRAGMENT_SHADER, DEFAULT_FS.c_str() );
@@ -87,12 +85,12 @@ void Shader::init(android_app* app) {
 
 	glAttachShader( programObject, vertexShader );
 	glAttachShader( programObject, fragmentShader );
-	
+
 	glLinkProgram( programObject );
 
 	GLint linked;
 	glGetProgramiv( programObject, GL_LINK_STATUS, &linked );
-	
+
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
@@ -125,6 +123,7 @@ const std::string Shader::DEFAULT_VS = R"(
 
 const std::string Shader::DEFAULT_FS = R"(
 	#version 300 es
+	precision mediump float;
 	in vec2 texCoordsOut;
 	out vec4 color;
 	uniform sampler2D image;

@@ -6,8 +6,8 @@ Background::Background(GLubyte* pixels, GLuint width, GLuint height)
 	: width(width), height(height), pixels(pixels) {
 }
 
-void Background::init(android_app* app) {
-	
+void Background::init(Renderer* renderer, AssetLoader* assetLoader) {
+
 	GLfloat vertices[] {
 		// Pos              // Tex
 		-1.0f, -1.0f, 0.0f, 0.0f, 1.0f, // T1 BL
@@ -19,14 +19,11 @@ void Background::init(android_app* app) {
 		 1.0f,  1.0f, 0.0f, 1.0f, 0.0f  // T2 TR
 	};
 
-	//char vShader[] = "shaders/bg.vs";
-	//char fShader[] = "shaders/bg.frag";
-	//shader.init(app, vShader, fShader);
-	shader.init(app);
+	shader.init();
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	texture.generate(pixels, width, height);
-	
+
 	glGenVertexArrays(1, &vao);
 
 	GLuint vbo;

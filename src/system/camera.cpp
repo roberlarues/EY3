@@ -383,7 +383,7 @@ bool Camera::getFrame(OutputArray out) {
 	return true;
 }
 
-void Camera::handleCmd(int32_t cmd, android_app* app) {
+void Camera::handleCmd(int32_t cmd, IWindow* window) {
 	switch (cmd) {
         case APP_CMD_INIT_WINDOW:
 			LOGI(" > Camera detects INIT WINDOW");

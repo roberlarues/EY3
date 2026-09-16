@@ -1,6 +1,15 @@
 #ifndef EY3_H
 #define EY3_H
 
+#include "app_cmd.h"
+#include "window.h"
+
+#ifdef __ANDROID__
+#include "window_android.h"
+#else
+#include "window_desktop.h"
+#endif
+
 #include "renderer.h"
 #include "renderizable.h"
 #include "shader.h"
@@ -11,12 +20,15 @@
 #include "engine.h"
 #include "input_handler.h"
 #include "input_listener.h"
+#include "input_event.h"
 #include "log.h"
 #include "background.h"
 
 #ifdef EY3_WITH_CV
-#include "camera.h"
 #include "camera_view.h"
+#ifdef __ANDROID__
+#include "camera.h"
+#endif // __ANDROID__
 #endif // EY3_WITH_CV
 
 #endif // EY3_H

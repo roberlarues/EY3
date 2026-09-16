@@ -1,5 +1,5 @@
 #include "camera_view.h"
-#include "engine.h"
+#include "renderer.h"
 #include "log.h"
 
 using namespace cv;
@@ -8,16 +8,14 @@ using namespace ey3;
 CameraView::CameraView(int32_t frameWidth, int32_t frameHeight): frameWidth(frameWidth), frameHeight(frameHeight), imageRotation(0) {
 }
 
-void CameraView::init(android_app* app) {
-	Engine* engine = (Engine*) app->userData;
-
+void CameraView::init(Renderer* renderer, AssetLoader* assetLoader) {
 	hasFrame = false;
-	int32_t screenWidth = engine->getRenderer()->getWidth();
-	int32_t screenHeight = engine->getRenderer()->getHeight();
+	int32_t screenWidth = renderer->getWidth();
+	int32_t screenHeight = renderer->getHeight();
 
 	float arScreen = screenWidth * 1.0f / screenHeight;
 	float arFrame = frameWidth * 1.0f / frameHeight;
-	
+
 	GLfloat w, h;
 	if (arFrame > arScreen) {
 		w = 1.0f;
@@ -50,10 +48,7 @@ void CameraView::init(android_app* app) {
 		 w,  h, 0.0f, u[3], v[3]  // T2 TR
 	};
 
-	//char vShader[] = "shaders/bg.vs";
-	//char fShader[] = "shaders/bg.frag";
-	//shader.init(app, vShader, fShader);
-	shader.init(app);
+	shader.init();
 
 	glGenVertexArrays(1, &vao);
 

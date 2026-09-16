@@ -25,7 +25,7 @@ class OrbTest: public InputListener {
 		Ptr<ORB> detector;
 	public:
 		OrbTest(int32_t width, int32_t height);
-		void handleInput(AInputEvent* event);
+		void handleInput(const InputEvent& event);
 		Mat processFrame(Mat frame);
 };
 

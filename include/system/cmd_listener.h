@@ -1,9 +1,11 @@
-#ifndef EY3CMDLISTENER_H 
-#define EY3CMDLISTENER_H 
+#ifndef EY3CMDLISTENER_H
+#define EY3CMDLISTENER_H
 
-#include <android_native_app_glue.h>
+#include <cstdint>
 
 namespace ey3 {
+
+	class IWindow;
 
 	/**
 	 * Interface that must implement system-comands listeners
@@ -11,8 +13,8 @@ namespace ey3 {
 	 */
 	class CmdListener {
 		public:
-			virtual void handleCmd(int32_t cmd, android_app* app) = 0;
+			virtual void handleCmd(int32_t cmd, IWindow* window) = 0;
 	};
 }
 
-#endif // EY3CMDLISTENER_H 
+#endif // EY3CMDLISTENER_H

@@ -6,7 +6,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY lib/${ANDROID_ABI})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY lib/${ANDROID_ABI})
 	
 # Android main lib
-add_library(${LIBNAME} SHARED src/main.cpp)
+add_library(${LIBNAME} SHARED src/main.cpp src/program.cpp)
 target_include_directories(${LIBNAME} PUBLIC ${ANDROID_NDK}/sources/android/native_app_glue include)
 
 # Link Libraries

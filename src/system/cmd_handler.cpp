@@ -2,9 +2,9 @@
 
 using namespace ey3;
 
-void CmdHandler::handleCmd(int32_t cmd, android_app* app) {
+void CmdHandler::handleCmd(int32_t cmd, IWindow* window) {
 	for (int i = 0; i < cmdListeners.size(); i++) {
-		cmdListeners[i]->handleCmd(cmd, app);
+		cmdListeners[i]->handleCmd(cmd, window);
 	}
 }
 

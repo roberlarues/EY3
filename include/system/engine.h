@@ -1,12 +1,13 @@
 #ifndef EY3ENGINE_H
 #define EY3ENGINE_H
 
-#include <android_native_app_glue.h>
 #include <chrono>
 
+#include "input_event.h"
 #include "input_handler.h"
 #include "cmd_handler.h"
 #include "renderer.h"
+#include "window.h"
 
 namespace ey3 {
 
@@ -15,7 +16,7 @@ namespace ey3 {
 	 */
 	class Engine {
 		private:
-			struct android_app* app;
+			IWindow* window;
 			Renderer renderer;
 			InputHandler inputHandler;
 			CmdHandler cmdHandler;
@@ -25,12 +26,19 @@ namespace ey3 {
 			float deltaTime = 0.0f;
 
 		public:
-			Engine(struct android_app* app);
+			Engine(IWindow* window);
 			~Engine();
 			void onCmd(int32_t cmd);
-			void onInput(AInputEvent* event);
+			void onInput(const InputEvent& event);
 			void pollEvents();
 
+			// Standard loop: pumps events and renders while in foreground,
+			// until the engine terminates. Apps with extra per-frame work
+			// (e.g. polling a camera) can call pollEvents/renderFrame
+			// directly instead and write their own loop.
+			void run();
+
+			IWindow* getWindow();
 			Renderer* getRenderer();
 			InputHandler* getInputHandler();
 			CmdHandler* getCmdHandler();

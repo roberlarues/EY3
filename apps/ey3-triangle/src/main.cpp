@@ -1,8 +1,7 @@
-#include <string>
 #include <android_native_app_glue.h>
 #include <ey3.h>
 
-#include "triangle.h"
+#include "program.h"
 
 using namespace ey3;
 
@@ -13,20 +12,10 @@ using namespace ey3;
  */
 void android_main(struct android_app* app) {
 	LOGI("BEGIN Android Main");
-	Engine engine(app);
 
-	Triangle triangle;
-	engine.getRenderer()->addRenderizable(&triangle);
-	engine.getInputHandler()->addListener(&triangle);
-	
-	while (!engine.hasTerminated()) {
-		engine.pollEvents();
-
-		if (engine.isInForeground()) {
-			engine.getRenderer()->renderFrame();
-		}
-	}
+	WindowAndroid window(app);
+	Engine engine(&window);
+	runProgram(engine);
 
 	LOGI("END Android Main");
 }
-

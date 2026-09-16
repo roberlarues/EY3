@@ -2,7 +2,7 @@
 
 using namespace ey3;
 
-void InputHandler::handleInput(AInputEvent* event) {
+void InputHandler::handleInput(const InputEvent& event) {
 	for (int i = 0; i < inputListeners.size(); i++) {
 		inputListeners[i]->handleInput(event);
 	}

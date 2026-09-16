@@ -49,7 +49,7 @@ set(EY3_SOURCES
 	src/system/platform_context.cpp)
 
 if(EY3_WITH_CV)
-	list(APPEND EY3_SOURCES src/system/camera.cpp)
+	list(APPEND EY3_SOURCES src/system/camera_android.cpp)
 endif(EY3_WITH_CV)
 
 add_library(${LIBNAME} ${EY3_SOURCES})

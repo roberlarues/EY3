@@ -27,7 +27,9 @@
 #ifdef EY3_WITH_CV
 #include "camera_view.h"
 #ifdef __ANDROID__
-#include "camera.h"
+#include "camera_android.h"
+#else
+#include "camera_desktop.h"
 #endif // __ANDROID__
 #endif // EY3_WITH_CV
 

@@ -5,7 +5,6 @@
 #include <camera/NdkCameraMetadata.h>
 #include <media/NdkImageReader.h>
 
-#include <android_native_app_glue.h>
 #include <opencv2/opencv.hpp>
 #include <string>
 
@@ -28,7 +27,6 @@ namespace ey3 {
 	 */
 	class Camera : public CmdListener {
 		private:
-			android_app* app;
 			ACameraManager* cameraManager;
 			ACameraDevice* cameraDevice;
 			AImageReader* reader;
@@ -48,7 +46,7 @@ namespace ey3 {
 
 			void loadFrameSize(ACameraMetadata* cameraMetadata);
 		public:
-			Camera(android_app* app);
+			Camera();
 			virtual ~Camera();
 			bool open(CameraFacing cameraFacing, int32_t cameraWidth, int32_t cameraHeight);
 			void close();

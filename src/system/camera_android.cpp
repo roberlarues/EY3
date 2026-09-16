@@ -1,9 +1,11 @@
-#include "camera.h"
+#include "camera_android.h"
 #include <string>
 #include <vector>
 #include <chrono>
+#include <android_native_app_glue.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include "log.h"
+#include "platform_context.h"
 
 #define MAX_BUF_COUNT 4
 #define COLOR_FormatUnknown -1
@@ -34,7 +36,7 @@ static ACameraCaptureSession_stateCallbacks sessionCallbacks = {
 	.onClosed = OnSessionClosed,
 };
 
-Camera::Camera(android_app* app): app(app) {
+Camera::Camera() {
 	LOGI("Creating camera");
 }
 
@@ -44,6 +46,7 @@ Camera::~Camera() {
 }
 
 bool Camera::hasPermission() {
+	android_app* app = PlatformContext::getAndroidApp();
 	JNIEnv* env;
 	app->activity->vm->AttachCurrentThread(&env, nullptr);
 
@@ -62,6 +65,7 @@ bool Camera::hasPermission() {
 void Camera::requestPermission() {
 	LOGI("Requesting camera permission");
 
+	android_app* app = PlatformContext::getAndroidApp();
 	JNIEnv* env;
 	app->activity->vm->AttachCurrentThread(&env, nullptr);
 
@@ -117,7 +121,7 @@ bool Camera::open(CameraFacing cameraFacing, int32_t cameraWidth, int32_t camera
 		close();
 		return false;
     }
-	
+
 	ACameraMetadata* cameraMetadata;
     camera_status = ACameraManager_getCameraCharacteristics(cameraManager, cameraId.c_str(), &cameraMetadata);
     if (camera_status != ACAMERA_OK) {
@@ -125,7 +129,7 @@ bool Camera::open(CameraFacing cameraFacing, int32_t cameraWidth, int32_t camera
 		close();
 		return false;
     }
-	
+
 	// loadFrameSize(cameraMetadata);
 	media_status_t mStatus = AImageReader_new(cameraWidth, cameraHeight, AIMAGE_FORMAT_YUV_420_888, MAX_BUF_COUNT, &reader);
 	if (mStatus != AMEDIA_OK) {
@@ -166,20 +170,20 @@ bool Camera::open(CameraFacing cameraFacing, int32_t cameraWidth, int32_t camera
 		close();
 		return false;
 	}
-		
+
 	camera_status = ACameraDevice_createCaptureRequest(cameraDevice, TEMPLATE_PREVIEW, &request);
 	if (camera_status != ACAMERA_OK) {
         LOGE("Failed to create preview capture request");
 		close();
 		return false;
     }
-	
+
 	camera_status = ACaptureRequest_addTarget(request, target);
 	if (camera_status != ACAMERA_OK) {
 		LOGE("Add target to CaptureRequest failed with error code: %d", camera_status);
 		close();
 		return false;
-	} 
+	}
 
 	camera_status = ACameraDevice_createCaptureSession(cameraDevice, container, &sessionCallbacks, &session);
 	if (camera_status != ACAMERA_OK) {
@@ -195,7 +199,7 @@ bool Camera::open(CameraFacing cameraFacing, int32_t cameraWidth, int32_t camera
 		return false;
 	}
 
-	AAssetManager* assetManager = app->activity->assetManager;
+	AAssetManager* assetManager = PlatformContext::getAndroidApp()->activity->assetManager;
 	if (assetManager == NULL) {
 		LOGE("AssetManager not loaded");
 		close();
@@ -203,7 +207,7 @@ bool Camera::open(CameraFacing cameraFacing, int32_t cameraWidth, int32_t camera
 	}
 	AConfiguration* config = AConfiguration_new();
 	AConfiguration_fromAssetManager(config, assetManager);
-	
+
 	int32_t screenOrientation = AConfiguration_getOrientation(config);
 	ACameraMetadata_const_entry entry = { 0 };
 	ACameraMetadata_getConstEntry(cameraMetadata, ACAMERA_SENSOR_ORIENTATION, &entry);
@@ -233,7 +237,7 @@ void Camera::close() {
 	if (!session) return;
 	ACameraCaptureSession_close(session);
 	session = nullptr;
-	
+
 	if (!target) return;
 	ACameraOutputTarget_free(target);
 	target = nullptr;
@@ -316,7 +320,7 @@ bool Camera::getFrame(OutputArray out) {
 		for (int v = 0; v < vLen; v += uvPixelStride) {
 			int u = v + uvPlaneDist;
 			buffer[yLen + v] = vPixel[v];
-			buffer[yLen + u] = vPixel[u]; 
+			buffer[yLen + u] = vPixel[u];
 		}
 	} else if (imageRotation == 90) {
 		int32_t wY = yLen / yStride;
@@ -333,7 +337,7 @@ bool Camera::getFrame(OutputArray out) {
 			int newV = (i % hV) * wV + (wV - uvPixelStride) - uvPixelStride * (i / hV);
 			int newU = newV + uvPlaneDist;
 			buffer[yLen + newV] = vPixel[v];
-			buffer[yLen + newU] = vPixel[u]; 
+			buffer[yLen + newU] = vPixel[u];
 		}
 	} else if (imageRotation == 180) {
 		for (int y = 0; y < yLen; y++) {
@@ -345,7 +349,7 @@ bool Camera::getFrame(OutputArray out) {
 			int newV = (vLen - 1) - v;
 			int newU = newV + uvPlaneDist;
 			buffer[yLen + newV] = vPixel[v];
-			buffer[yLen + newU] = vPixel[u]; 
+			buffer[yLen + newU] = vPixel[u];
 		}
 	} else if (imageRotation == 270) {
 		int32_t wY = yLen / yStride;
@@ -362,17 +366,17 @@ bool Camera::getFrame(OutputArray out) {
 			int newV = (vLen - 1) - ((i % hV) * wV + (wV - uvPixelStride) - uvPixelStride * (i / hV));
 			int newU = newV + uvPlaneDist;
 			buffer[yLen + newV] = vPixel[v];
-			buffer[yLen + newU] = vPixel[u]; 
+			buffer[yLen + newU] = vPixel[u];
 		}
 	}
 	// std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 	// LOGI("Orientation fixing time:  %lu", std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count());
 
-	AImage_delete(image);	
+	AImage_delete(image);
 
 	Mat yuv(frameHeight + frameHeight/2, frameWidth, CV_8UC1, buffer.data());
 	if (colorFormat == COLOR_FormatYUV420_YV12) {
-		cvtColor(yuv, out, COLOR_YUV2RGB_YV12); 
+		cvtColor(yuv, out, COLOR_YUV2RGB_YV12);
 	} else if (colorFormat == COLOR_FormatYUV420_NV21) {
 		cvtColor(yuv, out, COLOR_YUV2RGB_NV21);
 	} else {
@@ -410,7 +414,7 @@ std::string Camera::getFacingCameraId(CameraFacing cameraFacing) {
     ACameraIdList* cameraIds = nullptr;
     ACameraManager_getCameraIdList(cameraManager, &cameraIds);
 	LOGI("Num cameras: %d", cameraIds->numCameras);
-	
+
 	acamera_metadata_enum_android_lens_facing_t requestedCam;
 	if (cameraFacing == CameraFacing::FRONT) {
 		requestedCam = ACAMERA_LENS_FACING_FRONT;
@@ -451,7 +455,7 @@ void Camera::loadFrameSize(ACameraMetadata* cameraMetadata) {
 	for (uint32_t i = 0; i < entry.count; i += 4) {
 		int32_t input = entry.data.i32[i + 3];
 		int32_t format = entry.data.i32[i + 0];
-		
+
 		if (input) {
 			continue;
 		}

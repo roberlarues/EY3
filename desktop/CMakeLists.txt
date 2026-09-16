@@ -22,7 +22,10 @@ option(EY3_WITH_CV "Enable the OpenCV integration (asset image loading, CameraVi
 set(EY3_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 find_package(glfw3 REQUIRED)
-find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs)
+# OpenCV 5 renamed the features2d/calib3d modules to features/calib; the
+# opencv2/features2d.hpp, opencv2/calib3d.hpp headers and their API are
+# unaffected, only the find_package component/library names changed.
+find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs videoio features calib flann)
 
 include(${EY3_ROOT}/cmake/sources.cmake)
 
@@ -34,6 +37,7 @@ add_library(ey3 STATIC
 target_compile_definitions(ey3 PUBLIC LOGNAME="ey3")
 if(EY3_WITH_CV)
 	target_compile_definitions(ey3 PUBLIC EY3_WITH_CV)
+	target_sources(ey3 PRIVATE ${EY3_ROOT}/src/system/camera_desktop.cpp)
 endif(EY3_WITH_CV)
 
 target_include_directories(ey3 PUBLIC
@@ -48,13 +52,18 @@ target_link_libraries(ey3 PUBLIC glfw EGL GLESv2 ${OpenCV_LIBS})
 # Each app gets its own output directory (rather than sharing this project's
 # single CMAKE_CURRENT_BINARY_DIR) so their same-named 'assets' symlinks,
 # each resolved relative to that app's own executable, don't collide.
-function(ey3_add_desktop_app target assets_dir)
+# assets_dir is optional -- apps with no assets/ folder (e.g. ey3-orb-demo,
+# which only uses the built-in default shader) can omit it.
+function(ey3_add_desktop_app target)
+	set(assets_dir ${ARGN})
 	set_target_properties(${target} PROPERTIES
 		RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${target})
 	target_link_libraries(${target} PRIVATE ey3)
-	add_custom_command(TARGET ${target} POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E create_symlink ${assets_dir} $<TARGET_FILE_DIR:${target}>/assets
-		COMMENT "Linking assets for ${target}")
+	if(assets_dir)
+		add_custom_command(TARGET ${target} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E create_symlink ${assets_dir} $<TARGET_FILE_DIR:${target}>/assets
+			COMMENT "Linking assets for ${target}")
+	endif()
 endfunction()
 
 # ey3-triangle-desktop
@@ -71,3 +80,13 @@ add_executable(ey3-background-img-desktop
 	${EY3_ROOT}/apps/ey3-background-img/src/program.cpp)
 target_include_directories(ey3-background-img-desktop PRIVATE ${EY3_ROOT}/apps/ey3-background-img/include)
 ey3_add_desktop_app(ey3-background-img-desktop ${EY3_ROOT}/apps/ey3-background-img/assets)
+
+# ey3-orb-demo-desktop
+if(EY3_WITH_CV)
+	add_executable(ey3-orb-demo-desktop
+		${EY3_ROOT}/apps/ey3-orb-demo/src/main_desktop.cpp
+		${EY3_ROOT}/apps/ey3-orb-demo/src/program.cpp
+		${EY3_ROOT}/apps/ey3-orb-demo/src/orbTest.cpp)
+	target_include_directories(ey3-orb-demo-desktop PRIVATE ${EY3_ROOT}/apps/ey3-orb-demo/include)
+	ey3_add_desktop_app(ey3-orb-demo-desktop)
+endif(EY3_WITH_CV)

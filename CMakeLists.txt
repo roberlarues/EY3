@@ -41,6 +41,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fno-exceptions -Wall -fdiagn
 # EY3 source
 set(EY3_ROOT ${PROJECT_SOURCE_DIR})
 include(${PROJECT_SOURCE_DIR}/cmake/sources.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/strip.cmake)
 
 set(EY3_SOURCES
 	${EY3_SHARED_SOURCES}

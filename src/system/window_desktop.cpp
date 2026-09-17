@@ -2,12 +2,36 @@
 
 #include <GLFW/glfw3.h>
 
+#include <algorithm>
+#include <cctype>
+#include <string>
+
 #include "app_cmd.h"
 #include "engine.h"
 #include "input_event.h"
 #include "log.h"
 
 using namespace ey3;
+
+namespace {
+	// Derives a stable app_id/WM_CLASS (e.g. "EY3 ORB Demo" -> "ey3-orb-demo")
+	// so window manager rules (Hyprland windowrulev2, etc.) can target this
+	// window reliably instead of matching on the title text.
+	std::string slugify(const char* title) {
+		std::string slug;
+		for (const char* c = title; *c != '\0'; ++c) {
+			if (std::isalnum(static_cast<unsigned char>(*c))) {
+				slug += static_cast<char>(std::tolower(static_cast<unsigned char>(*c)));
+			} else if (!slug.empty() && slug.back() != '-') {
+				slug += '-';
+			}
+		}
+		while (!slug.empty() && slug.back() == '-') {
+			slug.pop_back();
+		}
+		return slug;
+	}
+}
 
 WindowDesktop::WindowDesktop(const char* title, int32_t width, int32_t height)
 	: width(width), height(height) {
@@ -23,6 +47,16 @@ WindowDesktop::WindowDesktop(const char* title, int32_t width, int32_t height)
 	glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+
+	const std::string appId = slugify(title);
+	glfwWindowHintString(GLFW_X11_CLASS_NAME, appId.c_str());
+	glfwWindowHintString(GLFW_X11_INSTANCE_NAME, appId.c_str());
+	glfwWindowHintString(GLFW_WAYLAND_APP_ID, appId.c_str());
+
+	// Fixed-size window: reports min==max size to the platform (X11 WM hints /
+	// Wayland xdg_toplevel), so compositors refuse interactive resize instead
+	// of just hiding the resize UI.
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
 	glfwWindow = glfwCreateWindow(width, height, title, nullptr, nullptr);
 	if (!glfwWindow) {

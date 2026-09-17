@@ -12,7 +12,8 @@ using namespace ey3;
 int main() {
 	LOGI("BEGIN Desktop Main");
 
-	WindowDesktop window("EY3 ORB Demo", 1280, 480);
+	// screenOrientation="landscape" in AndroidManifest.xml.
+	WindowDesktop window("EY3 ORB Demo", MOBILE_WIDTH_LANDSCAPE, MOBILE_HEIGHT_LANDSCAPE);
 	Engine engine(&window);
 	engine.onCmd(APP_CMD_INIT_WINDOW);
 	runProgram(engine);

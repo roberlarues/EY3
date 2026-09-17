@@ -12,7 +12,8 @@ using namespace ey3;
 int main() {
 	LOGI("BEGIN Desktop Main");
 
-	WindowDesktop window("EY3 Background Img", 800, 600);
+	// screenOrientation="portrait" in AndroidManifest.xml.
+	WindowDesktop window("EY3 Background Img", MOBILE_WIDTH_PORTRAIT, MOBILE_HEIGHT_PORTRAIT);
 	Engine engine(&window);
 	engine.onCmd(APP_CMD_INIT_WINDOW);
 	runProgram(engine);

@@ -7,6 +7,14 @@ struct GLFWwindow;
 
 namespace ey3 {
 
+	// Approximate mobile viewport (dp) used to size desktop windows, so a
+	// desktop run looks like the phone layout it targets. Pick the pair
+	// matching the app's AndroidManifest.xml android:screenOrientation.
+	constexpr int32_t MOBILE_WIDTH_PORTRAIT = 412;
+	constexpr int32_t MOBILE_HEIGHT_PORTRAIT = 915;
+	constexpr int32_t MOBILE_WIDTH_LANDSCAPE = MOBILE_HEIGHT_PORTRAIT;
+	constexpr int32_t MOBILE_HEIGHT_LANDSCAPE = MOBILE_WIDTH_PORTRAIT;
+
 	/**
 	 * IWindow backed by GLFW, requesting an EGL/OpenGL ES 3.0 context so the
 	 * shared renderer/shader code (written against GLES3, "#version 300 es")

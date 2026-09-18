@@ -29,7 +29,7 @@ find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs videoio features 
 
 include(${EY3_ROOT}/cmake/sources.cmake)
 
-add_library(ey3 STATIC
+add_library(ey3 SHARED
 	${EY3_SHARED_SOURCES}
 	${EY3_ROOT}/src/system/window_desktop.cpp
 	${EY3_ROOT}/src/system/asset_loader_desktop.cpp)
@@ -41,13 +41,45 @@ if(EY3_WITH_CV)
 endif(EY3_WITH_CV)
 
 target_include_directories(ey3 PUBLIC
-	${EY3_ROOT}/include
-	${EY3_ROOT}/include/graphics
-	${EY3_ROOT}/include/system
-	${EY3_ROOT}/include/views
+	$<BUILD_INTERFACE:${EY3_ROOT}/include>
+	$<BUILD_INTERFACE:${EY3_ROOT}/include/graphics>
+	$<BUILD_INTERFACE:${EY3_ROOT}/include/system>
+	$<BUILD_INTERFACE:${EY3_ROOT}/include/views>
+	$<INSTALL_INTERFACE:include/ey3>
+	$<INSTALL_INTERFACE:include/ey3/graphics>
+	$<INSTALL_INTERFACE:include/ey3/system>
+	$<INSTALL_INTERFACE:include/ey3/views>
 	${OpenCV_INCLUDE_DIRS})
 
 target_link_libraries(ey3 PUBLIC glfw EGL GLESv2 ${OpenCV_LIBS})
+
+# --- Installable package: after `cmake --install`, any other project just
+# does find_package(ey3) + target_link_libraries(app PRIVATE ey3::ey3), same
+# as it already does for glfw3/OpenCV -- no headers/lib copied into it.
+# See ../scripts/install-sdk.sh and ../templates/ey3-starter.
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+install(TARGETS ey3 EXPORT ey3Targets
+	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(DIRECTORY ${EY3_ROOT}/include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ey3)
+install(EXPORT ey3Targets FILE ey3Targets.cmake NAMESPACE ey3::
+	DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ey3)
+
+configure_package_config_file(
+	${CMAKE_CURRENT_SOURCE_DIR}/cmake/ey3Config.cmake.in
+	${CMAKE_CURRENT_BINARY_DIR}/ey3Config.cmake
+	INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ey3)
+write_basic_package_version_file(
+	${CMAKE_CURRENT_BINARY_DIR}/ey3ConfigVersion.cmake
+	VERSION 0.1.0
+	COMPATIBILITY AnyNewerVersion)
+install(FILES
+	${CMAKE_CURRENT_BINARY_DIR}/ey3Config.cmake
+	${CMAKE_CURRENT_BINARY_DIR}/ey3ConfigVersion.cmake
+	DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ey3)
 
 # Each app gets its own output directory (rather than sharing this project's
 # single CMAKE_CURRENT_BINARY_DIR) so their same-named 'assets' symlinks,

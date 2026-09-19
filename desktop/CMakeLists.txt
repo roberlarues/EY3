@@ -10,6 +10,7 @@
 #   cmake --build build-desktop
 #   ./build-desktop/ey3-triangle-desktop/ey3-triangle-desktop
 #   ./build-desktop/ey3-background-img-desktop/ey3-background-img-desktop
+#   ./build-desktop/ey3-maze-desktop/ey3-maze-desktop
 cmake_minimum_required(VERSION 3.16)
 project(EY3Desktop CXX)
 
@@ -106,12 +107,41 @@ add_executable(ey3-triangle-desktop
 target_include_directories(ey3-triangle-desktop PRIVATE ${EY3_ROOT}/apps/ey3-triangle/include)
 ey3_add_desktop_app(ey3-triangle-desktop ${EY3_ROOT}/apps/ey3-triangle/assets)
 
-# ey3-background-img-desktop
+# ey3-background-img-desktop (needs OpenCV: AssetLoader::loadImageAsset)
+if(EY3_WITH_CV)
 add_executable(ey3-background-img-desktop
 	${EY3_ROOT}/apps/ey3-background-img/src/main_desktop.cpp
 	${EY3_ROOT}/apps/ey3-background-img/src/program.cpp)
 target_include_directories(ey3-background-img-desktop PRIVATE ${EY3_ROOT}/apps/ey3-background-img/include)
 ey3_add_desktop_app(ey3-background-img-desktop ${EY3_ROOT}/apps/ey3-background-img/assets)
+endif(EY3_WITH_CV)
+
+# ey3-maze-desktop (needs OpenCV too: it loads its sprite sheets from PNGs)
+if(EY3_WITH_CV)
+add_executable(ey3-maze-desktop
+	${EY3_ROOT}/apps/ey3-maze/src/main_desktop.cpp
+	${EY3_ROOT}/apps/ey3-maze/src/program.cpp
+	${EY3_ROOT}/apps/ey3-maze/src/game/direction.cpp
+	${EY3_ROOT}/apps/ey3-maze/src/game/grid.cpp
+	${EY3_ROOT}/apps/ey3-maze/src/game/level.cpp
+	${EY3_ROOT}/apps/ey3-maze/src/game/level_data.cpp
+	${EY3_ROOT}/apps/ey3-maze/src/game/level_library.cpp
+	${EY3_ROOT}/apps/ey3-maze/src/game/maze_game.cpp
+	${EY3_ROOT}/apps/ey3-maze/src/game/scene.cpp
+	${EY3_ROOT}/apps/ey3-maze/src/graphics/sprite.cpp
+	${EY3_ROOT}/apps/ey3-maze/src/graphics/sprite_library.cpp
+	${EY3_ROOT}/apps/ey3-maze/src/graphics/sprite_renderer.cpp
+	${EY3_ROOT}/apps/ey3-maze/src/graphics/sprite_sheet.cpp
+	${EY3_ROOT}/apps/ey3-maze/src/objects/exit.cpp
+	${EY3_ROOT}/apps/ey3-maze/src/objects/floor.cpp
+	${EY3_ROOT}/apps/ey3-maze/src/objects/game_object.cpp
+	${EY3_ROOT}/apps/ey3-maze/src/objects/grid_object.cpp
+	${EY3_ROOT}/apps/ey3-maze/src/objects/player.cpp
+	${EY3_ROOT}/apps/ey3-maze/src/objects/wall.cpp
+	${EY3_ROOT}/apps/ey3-maze/src/ui/touch_direction_pad.cpp)
+target_include_directories(ey3-maze-desktop PRIVATE ${EY3_ROOT}/apps/ey3-maze/include)
+ey3_add_desktop_app(ey3-maze-desktop ${EY3_ROOT}/apps/ey3-maze/assets)
+endif(EY3_WITH_CV)
 
 # ey3-orb-demo-desktop
 if(EY3_WITH_CV)

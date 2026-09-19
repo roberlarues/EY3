@@ -64,6 +64,7 @@ ninja ey3
  *  [ey3-triangle](ey3/tree/master/apps/ey3-triangle): an example that displays a triangle in the middle of the screen that changes its color depending on the user touch region.
  *  [ey3-background-img](ey3/tree/master/apps/ey3-background-img): an example that loads an image from the assets folder and displays it streched to the screen.
  *  [ey3-orb-demo](ey3/tree/master/ey3-orb-demo): an example of feature matching with ORB in real-time.
+ *  [ey3-maze](ey3/tree/master/apps/ey3-maze): a small maze game, showing sprites and movement: a ball rolls from the entrance to the exit, driven by touching the top, bottom, left or right region of the screen. Needs OpenCV, only to load its sprite sheets from PNG.
 
 
 ## External libraries

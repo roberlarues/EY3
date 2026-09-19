@@ -150,8 +150,10 @@ add_custom_target(keystore DEPENDS ${CMAKE_BINARY_DIR}/${KEYSTORE}.keystore)
 add_subdirectory(apps/ey3-triangle)
 
 if(EY3_WITH_CV)
-	# Both depend on AssetLoader::loadImageAsset / Camera / CameraView, which need OpenCV
+	# All three depend on AssetLoader::loadImageAsset (ey3-maze loads its
+	# sprite sheets with it) / Camera / CameraView, which need OpenCV
 	add_subdirectory(apps/ey3-background-img)
+	add_subdirectory(apps/ey3-maze)
 	add_subdirectory(apps/ey3-orb-demo)
 endif(EY3_WITH_CV)
 	

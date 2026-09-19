@@ -5,7 +5,7 @@
 
 /**
  * App setup shared by every platform's entry point (main.cpp, main_desktop.cpp):
- * wires up Triangle and runs the standard loop until the engine terminates.
+ * wires up Triangle and runs the loop until the engine terminates.
  */
 void runProgram(ey3::Engine& engine);
 

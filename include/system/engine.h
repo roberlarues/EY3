@@ -32,12 +32,6 @@ namespace ey3 {
 			void onInput(const InputEvent& event);
 			void pollEvents();
 
-			// Standard loop: pumps events and renders while in foreground,
-			// until the engine terminates. Apps with extra per-frame work
-			// (e.g. polling a camera) can call pollEvents/renderFrame
-			// directly instead and write their own loop.
-			void run();
-
 			IWindow* getWindow();
 			Renderer* getRenderer();
 			InputHandler* getInputHandler();

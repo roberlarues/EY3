@@ -1,0 +1,12 @@
+; The levels of the game, in the order they are played. One file name per
+; line; blank lines and lines starting with ';' are ignored.
+;
+; Each level file is a rectangle of characters:
+;   #  wall        .  floor
+;   @  where the ball starts    X  the way out
+; Anything else (a space, say) leaves the cell empty, so a level does not
+; have to be a full rectangle.
+
+01-first-steps.txt
+02-spiral.txt
+03-labyrinth.txt

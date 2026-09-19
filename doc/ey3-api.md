@@ -10,7 +10,15 @@ particular, since it doesn't vendor a copy of them (see its README.md).
 ```cpp
 IWindow* window = ...;       // WindowDesktop or WindowAndroid
 Engine engine(window);
-engine.run();                 // pumps events + renders until terminated
+
+// The loop belongs to the app: every app writes this (or its own variant --
+// advancing a game by getDeltaTime(), polling a camera, ...).
+while (!engine.hasTerminated()) {
+    engine.pollEvents();
+    if (engine.isInForeground()) {
+        engine.getRenderer()->renderFrame();
+    }
+}
 ```
 
 - **`IWindow`** -- abstracts the platform window/surface/GL-context/event
@@ -23,13 +31,15 @@ engine.run();                 // pumps events + renders until terminated
   - `WindowAndroid(android_app* app)` -- construct from `android_main`'s
     `android_app*`.
 - **`Engine`** -- owns the `Renderer`, `InputHandler` and `CmdHandler`, and
-  drives the loop.
+  wires them to the platform window. The loop itself is the app's (see
+  above).
   - `Engine(IWindow* window)`
-  - `void run()` -- the standard loop: while in foreground, `pollEvents()`
-    then `renderFrame()`, until `onCmd(APP_CMD_DESTROY)`. Apps with extra
-    per-frame work (e.g. polling a camera every tick) can call
-    `pollEvents()`/`getRenderer()->renderFrame()` directly in their own loop
-    instead of calling `run()`.
+  - `void pollEvents()` -- pumps the platform's event queue (which is what
+    delivers input and lifecycle commands) and measures the frame time
+    returned by `getDeltaTime()`. Call it once per iteration of your loop,
+    before rendering. The engine deliberately has no `run()` of its own: the
+    loop above is three lines, and every app beyond the simplest one wants
+    its own work in it.
   - `void onCmd(int32_t cmd)` -- feed a lifecycle command in (desktop's
     `main_desktop.cpp` calls `onCmd(APP_CMD_INIT_WINDOW)` once up front since
     GLFW creates the window synchronously; Android wires this up for you via
@@ -72,7 +82,10 @@ engine.getRenderer()->addRenderizable(&shape);
   `render()`/`init()` run with the GL context current, so plain
   `GLES3/gl3.h` calls (any of the `#version 300 es` API) work directly.
 - See `apps/ey3-triangle` (main EY3 repo) for a complete, minimal working
-  example, including a shader pair under `assets/shaders/`.
+  example, including a shader pair under `assets/shaders/`, and
+  `apps/ey3-maze` for a bigger one: a game whose objects are the
+  `Renderizable`s, kept apart from the level that holds them and the rules
+  that drive them.
 
 ## Input: InputListener, InputEvent
 
@@ -116,7 +129,9 @@ engine.getCmdHandler()->addListener(&myThing);
   `desktop/CMakeLists.txt`; Android: via `AAssetManager`). `Shader::init`
   uses this for shader source.
 - `cv::Mat loadImageAsset(const char* assetPath)` -- only if built with
-  `EY3_WITH_CV` (see below).
+  `EY3_WITH_CV` (see below). Reads the image as BGR with no alpha channel, so
+  a sprite sheet needing transparency has to use a color key
+  (`apps/ey3-maze` loads its PNGs with this).
 
 ## Graphics helpers: Shader, Texture, Background
 

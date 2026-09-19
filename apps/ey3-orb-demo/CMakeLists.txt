@@ -2,8 +2,11 @@ project(EY3-ORB-Demo)
 
 set(LIBNAME "ey3-orb-demo")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY lib/${ANDROID_ABI})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY lib/${ANDROID_ABI})
+# The .so is linked straight into apk-root/, the directory tree aapt packs
+# into the APK further down, so that tree holds the app's native libs and
+# nothing else.
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY apk-root/lib/${ANDROID_ABI})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY apk-root/lib/${ANDROID_ABI})
 	
 # Android main lib
 add_library(${LIBNAME} SHARED src/main.cpp src/program.cpp src/orbTest.cpp)
@@ -41,8 +44,13 @@ add_custom_target(${LIBNAME}-unsigned DEPENDS ${LIBNAME}.unsigned.apk COMMENT "C
 
 
 #CUSTOM COMMANDS
+# aapt copies the *contents* of the directory given as its last argument
+# into the APK, keeping their relative paths, which is how lib/<abi>/*.so
+# gets in. That argument must be apk-root and not "." (the build directory
+# itself): "." would also sweep in CMake's object files and, on a rebuild,
+# the APKs the previous run left behind.
 add_custom_command(OUTPUT ${LIBNAME}.unsigned.apk
-	COMMAND ${BUILD_TOOLS}/aapt package -f -M ${PROJECT_SOURCE_DIR}/AndroidManifest.xml --auto-add-overlay -S ${PROJECT_SOURCE_DIR}/res -S ${PROJECT_SOURCE_DIR}/../../res -I $ENV{ANDROID_HOME}/platforms/${ANDROID_PLATFORM}/android.jar -F ${LIBNAME}.unsigned.apk .
+	COMMAND ${BUILD_TOOLS}/aapt package -f -M ${PROJECT_SOURCE_DIR}/AndroidManifest.xml --auto-add-overlay -S ${PROJECT_SOURCE_DIR}/res -S ${PROJECT_SOURCE_DIR}/../../res -I $ENV{ANDROID_HOME}/platforms/${ANDROID_PLATFORM}/android.jar -F ${LIBNAME}.unsigned.apk apk-root
 	DEPENDS ${LIBNAME}
 	COMMENT "Building apk")
 

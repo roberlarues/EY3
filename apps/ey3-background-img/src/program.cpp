@@ -13,5 +13,13 @@ void runProgram(Engine& engine) {
 	Background bg(image.ptr(), image.cols, image.rows);
 	engine.getRenderer()->addRenderizable(&bg);
 
-	engine.run();
+	// The loop belongs to the app, not to the engine: pump the platform's
+	// events, then draw, until the window goes away.
+	while (!engine.hasTerminated()) {
+		engine.pollEvents();
+
+		if (engine.isInForeground()) {
+			engine.getRenderer()->renderFrame();
+		}
+	}
 }

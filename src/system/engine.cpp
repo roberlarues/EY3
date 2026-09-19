@@ -46,15 +46,6 @@ void Engine::pollEvents() {
 	window->pollEvents();
 }
 
-void Engine::run() {
-	while (!hasTerminated()) {
-		pollEvents();
-		if (isInForeground()) {
-			renderer.renderFrame();
-		}
-	}
-}
-
 /*
  * GETTERS AND SETTERS
  */

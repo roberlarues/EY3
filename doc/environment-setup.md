@@ -225,3 +225,38 @@ export ANDROID_NDK=$ANDROID_HOME/ndk/27.2.12479018
 export OPENCV_BUILD_OUTPUT=$HOME/opencv-android        # solo si EY3_WITH_CV=ON
 export PATH="$JAVA_HOME/bin:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
 ```
+
+### 7.1 Trampa: las variables se congelan al configurar, no al compilar
+
+Los `CMakeLists.txt` usan `$ENV{ANDROID_HOME}` y `$ENV{JAVA_HOME}`, que CMake lee
+**en el momento de configurar** y escribe tal cual dentro de las reglas de
+compilación. Si configuras desde una shell que no las tiene exportadas, no
+falla nada en ese momento: las reglas quedan con rutas rotas y el error
+aparece mucho después, al compilar.
+
+Síntomas concretos vistos:
+
+```
+/bin/sh: línea 1: /build-tools/34.0.0/aapt: No existe el fichero o el directorio
+cd .../build && /bin/keytool -genkeypair ...
+```
+
+Es decir, `${BUILD_TOOLS}` quedó como `/build-tools/34.0.0` (con `ANDROID_HOME`
+vacío) y `keytool` como `/bin/keytool` (con `JAVA_HOME` vacío).
+
+Dos consecuencias prácticas:
+
+1. **Exportar las variables después no arregla nada.** Hay que volver a
+   configurar desde una shell que ya las tenga:
+   `ANDROID_HOME=... JAVA_HOME=... cmake -S . -B build`.
+2. **Reconfigurar con valores distintos rompe la regla del keystore.** Al
+   cambiar la línea de comandos, ninja considera que `release.keystore` está
+   desactualizado y reintenta `keytool -genkeypair`, que falla con *"No se ha
+   generado el par de claves, el alias \<alias\> ya existe"* y detiene la
+   compilación. Se sale de ahí borrando el keystore (ojo: cambia la clave de
+   firma) o, mejor, configurando siempre con las mismas variables.
+
+Pendiente de revisar: resolver `aapt`/`zipalign`/`keytool` con `find_program()`
+y guardarlos en la caché, y hacer que la regla del keystore no se reintente si
+el fichero ya existe. Eso quitaría la dependencia del entorno en el momento de
+configurar y ambos síntomas de arriba.

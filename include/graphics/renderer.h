@@ -27,6 +27,7 @@ namespace ey3 {
 			IWindow* window;
 			AssetLoader assetLoader;
 			bool enabled;
+			int32_t contextGeneration;
 			int32_t width;
 			int32_t height;
 
@@ -41,6 +42,20 @@ namespace ey3 {
 			void removeRenderizable(Renderizable* renderizable);
 			int32_t getWidth();
 			int32_t getHeight();
+
+			// The window being drawn on, for the few things that need more
+			// than its pixel size (its physical size, for instance).
+			IWindow* getWindow();
+
+			/**
+			 * Counts the GL contexts this renderer has had. It goes up every
+			 * time the surface comes back -- which on Android happens
+			 * whenever the app returns from the background, taking every
+			 * texture, buffer and shader with it. Anything caching GPU
+			 * resources can compare this against the last value it saw to
+			 * know whether they are still alive.
+			 */
+			int32_t getContextGeneration();
 
 			void handleCmd(int32_t cmd, IWindow* window);
 	};

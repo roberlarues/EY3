@@ -8,10 +8,10 @@
 #     CMAKE_PREFIX_PATH when configuring a project that uses it).
 #   - Android: there's no installable prebuilt equivalent (a static lib built
 #     with one NDK version isn't reliably ABI-compatible with an app built
-#     against another), so instead this copies the engine sources + headers
-#     to ONE shared location, default ~/.local/share/ey3-android-sdk, that
-#     any Android project can point its own NDK build at (see
-#     templates/ey3-starter/android/CMakeLists.txt's EY3_ANDROID_SDK).
+#     against another), so instead this copies the engine sources, headers
+#     and CMake modules to ONE shared location, default
+#     ~/.local/share/ey3-android-sdk, that any Android project points its own
+#     NDK build at through EY3_ANDROID_SDK (see any apps/*/android/CMakeLists.txt).
 #   - Also refreshes templates/ey3-starter/doc/ey3-api.md from doc/ey3-api.md.
 #
 # Run again after changing anything under include/, src/ or doc/ey3-api.md
@@ -47,13 +47,17 @@ fi
 
 echo "--- Android: vendoring sources into ${ANDROID_SDK} ---"
 rm -rf "${ANDROID_SDK}"
-mkdir -p "${ANDROID_SDK}/src/graphics" "${ANDROID_SDK}/src/system" "${ANDROID_SDK}/src/views"
+mkdir -p "${ANDROID_SDK}"
+# The whole of include/ and src/, rather than a hand-kept list of files: the
+# list went stale twice (mat4.cpp, head_tracker.cpp) and the breakage only
+# showed up when building from outside the repo. The few desktop-only sources
+# that come along are never compiled by the Android build -- cmake/sources.cmake,
+# copied below, is the list that decides.
 cp -r "${ROOT}/include" "${ANDROID_SDK}/include"
-cp "${ROOT}/src/graphics/renderer.cpp" "${ROOT}/src/graphics/shader.cpp" "${ROOT}/src/graphics/texture.cpp" "${ANDROID_SDK}/src/graphics/"
-cp "${ROOT}/src/system/engine.cpp" "${ROOT}/src/system/cmd_handler.cpp" "${ROOT}/src/system/input_handler.cpp" \
-   "${ROOT}/src/system/window_android.cpp" "${ROOT}/src/system/asset_loader_android.cpp" "${ROOT}/src/system/platform_context.cpp" \
-   "${ROOT}/src/system/camera_android.cpp" "${ANDROID_SDK}/src/system/"
-cp "${ROOT}/src/views/background.cpp" "${ROOT}/src/views/camera_view.cpp" "${ANDROID_SDK}/src/views/"
+cp -r "${ROOT}/src" "${ANDROID_SDK}/src"
+# The CMake modules that build the engine and package an APK. A project using
+# the SDK includes these instead of carrying its own copy of either.
+cp -r "${ROOT}/cmake" "${ANDROID_SDK}/cmake"
 cat > "${ANDROID_SDK}/VENDORED.md" <<EOF
 This is a generated copy of include/ and part of src/ from the main EY3 repo
 (${ROOT}), produced by scripts/install-sdk.sh. Do not edit it here -- edit

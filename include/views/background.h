@@ -17,9 +17,11 @@ namespace ey3 {
 			GLuint vao;
 
 			GLuint width, height;
+			GLuint format;
 			GLubyte* pixels;
 		public:
-			Background(GLubyte* pixels, GLuint width, GLuint height);
+			/** format is GL_RGB or GL_RGBA, matching the pixels given. */
+			Background(GLubyte* pixels, GLuint width, GLuint height, GLuint format = GL_RGB);
 			void init(Renderer* renderer, AssetLoader* assetLoader);
 			void render();
 	};

@@ -1,4 +1,6 @@
 #include "camera_android.h"
+
+#include <math.h>
 #include <string>
 #include <vector>
 #include <chrono>
@@ -222,9 +224,11 @@ bool Camera::open(CameraFacing cameraFacing, int32_t cameraWidth, int32_t camera
 	}
 	LOGI("Camera rotation: %d", imageRotation);
 
+	loadFieldOfView(cameraMetadata);
+
 	loaded = true;
 	ACameraMetadata_free(cameraMetadata);
-	LOGI("Camara opened!");
+	LOGI("Camera opened");
 
 	opened = true;
 	return true;
@@ -476,6 +480,37 @@ int32_t Camera::getFrameWidth() {
 
 int32_t Camera::getFrameHeight() {
 	return frameHeight;
+}
+
+void Camera::loadFieldOfView(ACameraMetadata* cameraMetadata) {
+	fieldOfView = 0.0f;
+
+	ACameraMetadata_const_entry focal = { 0 };
+	ACameraMetadata_const_entry sensor = { 0 };
+	if (ACameraMetadata_getConstEntry(cameraMetadata,
+			ACAMERA_LENS_INFO_AVAILABLE_FOCAL_LENGTHS, &focal) != ACAMERA_OK
+		|| ACameraMetadata_getConstEntry(cameraMetadata,
+			ACAMERA_SENSOR_INFO_PHYSICAL_SIZE, &sensor) != ACAMERA_OK
+		|| focal.count < 1 || sensor.count < 2) {
+		LOGW("This camera does not report its lens data; field of view unknown");
+		return;
+	}
+
+	// The sensor's longer side, because that is the one the frame's longer
+	// side comes from however the image ends up being turned.
+	float focalMm = focal.data.f[0];
+	float sensorMm = sensor.data.f[0] > sensor.data.f[1] ? sensor.data.f[0] : sensor.data.f[1];
+	if (focalMm <= 0.0f || sensorMm <= 0.0f) {
+		return;
+	}
+
+	fieldOfView = 2.0f * atanf(sensorMm / (2.0f * focalMm)) * 180.0f / (float) M_PI;
+	LOGI("Camera field of view: %.1f degrees (focal %.2f mm, sensor %.2f mm)",
+	     fieldOfView, focalMm, sensorMm);
+}
+
+float Camera::getFieldOfView() {
+	return fieldOfView;
 }
 
 int32_t Camera::getImageRotation() {

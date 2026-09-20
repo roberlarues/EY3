@@ -2,8 +2,8 @@
 
 using namespace ey3;
 
-Background::Background(GLubyte* pixels, GLuint width, GLuint height)
-	: width(width), height(height), pixels(pixels) {
+Background::Background(GLubyte* pixels, GLuint width, GLuint height, GLuint format)
+	: width(width), height(height), format(format), pixels(pixels) {
 }
 
 void Background::init(Renderer* renderer, AssetLoader* assetLoader) {
@@ -22,7 +22,7 @@ void Background::init(Renderer* renderer, AssetLoader* assetLoader) {
 	shader.init();
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	texture.generate(pixels, width, height);
+	texture.generate(pixels, width, height, format);
 
 	glGenVertexArrays(1, &vao);
 

@@ -8,9 +8,6 @@
 #include "log.h"
 
 using namespace ey3;
-#ifdef EY3_WITH_CV
-using namespace cv;
-#endif // EY3_WITH_CV
 
 namespace {
 
@@ -55,16 +52,3 @@ const std::string AssetLoader::loadStringAsset(const char* assetPath) {
 	buffer << file.rdbuf();
 	return buffer.str();
 }
-
-#ifdef EY3_WITH_CV
-Mat AssetLoader::loadImageAsset(const char* assetPath) {
-	std::string fullPath = assetPathFor(assetPath);
-	LOGI("Loading asset %s", fullPath.c_str());
-
-	Mat image = imread(fullPath, IMREAD_COLOR);
-	if (image.empty()) {
-		LOGE("Asset not found: %s", fullPath.c_str());
-	}
-	return image;
-}
-#endif // EY3_WITH_CV

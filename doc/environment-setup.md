@@ -1,65 +1,58 @@
-# Entorno de desarrollo: instalación
+# Development environment: installation
 
-Guía para dejar listo un entorno capaz de compilar EY3 desde CLI, sin
-Android Studio. Cubre dos escenarios que deben acabar en el mismo estado:
+How to set up a machine that can build EY3 from the command line, without
+Android Studio. It covers two scenarios that must end in the same state:
 
-- **Desarrollo local**: Arch Linux.
-- **CI**: Ubuntu (probablemente Ubuntu LTS en el runner).
+- **Local development**: Arch Linux.
+- **CI**: Ubuntu (an Ubuntu LTS runner, most likely).
 
-La estrategia es instalar el SDK/NDK de Android vía `sdkmanager` (herramienta
-oficial, multiplataforma) en vez de paquetes de la distro, para que la
-versión instalada sea *idéntica* en ambos sistemas. Solo las herramientas de
-base (Java, cmake, ninja, utilidades) se instalan con el gestor de paquetes
-de cada distro.
+The Android SDK/NDK are installed through `sdkmanager` (the official,
+cross-platform tool) rather than from distribution packages, so that the
+installed versions are *identical* on both systems. Only the base tools
+(Java, cmake, ninja, utilities) come from each distribution's package
+manager.
 
-## 1. Resumen de versiones
+## 1. Versions
 
-| Herramienta | Versión recomendada | Motivo |
+| Tool | Recommended version | Why |
 |---|---|---|
-| JDK | 17 | Exigido por las `cmdline-tools` recientes de Android; usado además para `keytool`/`jarsigner`. |
-| cmake | ≥ 3.22 (el del sistema) | Generador de build, usado tanto para EY3 como para OpenCV. |
-| ninja | ≥ 1.10 (el del sistema) | Backend de build, usado por todos los `add_custom_command` del proyecto. |
-| Android cmdline-tools | última | Para instalar SDK/NDK/build-tools de forma reproducible vía `sdkmanager`. |
-| Android build-tools | 34.0.0 (o la última estable) | `aapt`, `zipalign` (usados directamente en los `CMakeLists.txt` de `apps/`). |
-| Android platform | android-24 | Ver nota más abajo — es el mínimo real que exige el código, no el que declaran los `AndroidManifest.xml` actuales (19). |
-| Android NDK | r27 (LTS) | Toolchain de compilación C++ para Android. Evitar release candidates. |
-| OpenCV | 4.x reciente (compilado desde fuente para Android) | Solo necesario si vas a activar `EY3_WITH_CV=ON`. |
+| JDK | 17 | Required by recent Android `cmdline-tools`; also provides `keytool`/`jarsigner`. |
+| cmake | >= 3.22 (the system one) | Build generator, for both EY3 and OpenCV. |
+| ninja | >= 1.10 (the system one) | Build backend, used by every `add_custom_command` in the project. |
+| Android cmdline-tools | latest | Installs the SDK/NDK/build-tools reproducibly through `sdkmanager`. |
+| Android build-tools | 34.0.0 (or the latest stable) | `aapt` and `zipalign`, used by `cmake/ey3-android-app.cmake` to package an APK. |
+| Android platform | android-24 | The code's real minimum: it uses the Camera2 NDK (`ACameraManager_create`) and `AImageReader`, both available from API 24. |
+| Android NDK | r27 (LTS) | The C++ toolchain for Android. Avoid release candidates. |
+| OpenCV | a recent 4.x, with `objdetect` and `dnn` | A hard dependency of the engine (see §5). |
 
-> **Nota sobre `android-24`**: el código usa Camera2 NDK (`ACameraManager_create`,
-> etc.) y `AImageReader`, ambas APIs disponibles desde API 24. Los
-> `AndroidManifest.xml` de los ejemplos declaran `minSdkVersion="19"`, lo cual
-> es inconsistente con esa dependencia real (un dispositivo API 19-23
-> crashearía al usar la cámara). No lo he corregido todavía — lo dejo anotado
-> aquí como pendiente, no como parte de esta guía de entorno.
+## 2. Base distribution packages
 
-## 2. Paquetes base de la distro
-
-### Arch Linux (desarrollo local)
+### Arch Linux (local development)
 
 ```bash
 sudo pacman -S --needed jdk17-openjdk cmake ninja unzip wget git base-devel
 ```
 
-### Ubuntu (pipeline de CI)
+### Ubuntu (CI pipeline)
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y openjdk-17-jdk cmake ninja-build unzip wget git build-essential
 ```
 
-`build-essential`/`base-devel` hacen falta porque `cmake` ejecuta
-comprobaciones de compilador nativo (`try_compile`) al configurar, aunque el
-build final de EY3 se cross-compile con el NDK.
+`build-essential`/`base-devel` are needed because `cmake` runs native
+compiler checks (`try_compile`) while configuring, even though the final EY3
+build is cross-compiled with the NDK.
 
 ## 3. Android SDK (cmdline-tools)
 
-Mismo procedimiento en Arch y Ubuntu, ya que se descarga el zip oficial de
-Google en vez de usar el gestor de paquetes de la distro.
+The same procedure on Arch and Ubuntu, since it downloads Google's official
+zip instead of using the distribution's package manager.
 
-1. Descargar las *Command line tools only* desde la página oficial:
+1. Download the *Command line tools only* package from the official page:
    https://developer.android.com/studio#command-tools
-2. Descomprimir de forma que quede esta estructura (la herramienta es
-   quisquillosa con la ruta `cmdline-tools/latest/`):
+2. Unzip it into this exact structure (the tool is fussy about the
+   `cmdline-tools/latest/` path):
 
 ```bash
 mkdir -p $HOME/android-sdk/cmdline-tools
@@ -67,20 +60,19 @@ unzip commandlinetools-linux-*.zip -d $HOME/android-sdk/cmdline-tools
 mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
 ```
 
-3. Exportar variables de entorno (añadir a `~/.bashrc` / `~/.zshrc` o al
-   script de CI):
+3. Export the environment variables (add them to `~/.bashrc` / `~/.zshrc` or
+   to the CI script):
 
 ```bash
 export ANDROID_HOME="$HOME/android-sdk"
-export JAVA_HOME="/usr/lib/jvm/java-17-openjdk"   # ajustar según distro
+export JAVA_HOME="/usr/lib/jvm/java-17-openjdk"   # adjust per distribution
 export PATH="$JAVA_HOME/bin:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
 ```
 
-   - `$JAVA_HOME/bin` en el PATH es necesario porque los `CMakeLists.txt` de
-     `apps/*` invocan `jarsigner` directamente, sin ruta absoluta.
-   - En Ubuntu, `JAVA_HOME` suele ser `/usr/lib/jvm/java-17-openjdk-amd64`.
+   On Ubuntu, `JAVA_HOME` is usually `/usr/lib/jvm/java-17-openjdk-amd64`.
+   These variables are read **while configuring** (see §7.1).
 
-4. Aceptar licencias e instalar los paquetes necesarios:
+4. Accept the licences and install the packages:
 
 ```bash
 yes | sdkmanager --sdk_root="$ANDROID_HOME" --licenses
@@ -91,172 +83,119 @@ sdkmanager --sdk_root="$ANDROID_HOME" \
   "build-tools;34.0.0"
 ```
 
-> Instala **ambos** platforms, no solo el 34: los `CMakeLists.txt` de `apps/*`
-> reutilizan la misma variable `ANDROID_PLATFORM` tanto para el nivel de API
-> del NDK (`-DANDROID_PLATFORM=android-24`, ver §6) como para el
-> `android.jar` que usa `aapt` al empaquetar (`platforms/<ANDROID_PLATFORM>/android.jar`).
-> Si solo instalas el 34, el empaquetado del APK falla con
-> `Asset package include '.../platforms/android-24/android.jar' not found`
-> aunque la compilación C++ haya ido bien.
+> Install **both** platforms, not just 34: the build uses the same
+> `ANDROID_PLATFORM` variable for the NDK's API level
+> (`-DANDROID_PLATFORM=android-24`, see §6) and for the `android.jar` that
+> `aapt` packages against (`platforms/<ANDROID_PLATFORM>/android.jar`).
 
-   Comprueba versiones disponibles con `sdkmanager --sdk_root="$ANDROID_HOME" --list`
-   si quieres una `build-tools`/`platform` más reciente que la de esta tabla.
+   Run `sdkmanager --sdk_root="$ANDROID_HOME" --list` to check for a newer
+   `build-tools`/`platform` than the ones in the table.
 
 ## 4. Android NDK
 
 ```bash
 sdkmanager --sdk_root="$ANDROID_HOME" --list | grep ndk
-# elige la última versión r27.x (evita "rc" / release candidates)
+# pick the latest r27.x (avoid "rc" / release candidates)
 sdkmanager --sdk_root="$ANDROID_HOME" "ndk;27.2.12479018"
 ```
 
 ```bash
-export ANDROID_NDK="$ANDROID_HOME/ndk/27.2.12479018"   # ajusta al valor real instalado
+export ANDROID_NDK="$ANDROID_HOME/ndk/27.2.12479018"   # match what you installed
 ```
 
-(El número de patch exacto puede haber cambiado desde que se escribió esta
-guía — usa el que te liste `sdkmanager --list`.)
+(The exact patch number may have moved on since this was written -- use
+whatever `sdkmanager --list` offers.)
 
-## 5. OpenCV para Android (solo si vas a usar `EY3_WITH_CV=ON`)
+## 5. OpenCV for Android (required)
 
-EY3 espera los `.a` estáticos de OpenCV en una estructura concreta
-(`staticlibs/<ABI>/`, `3rdparty/libs/<ABI>/`, `jni/include/`), que es la que
-genera el propio build system de OpenCV al compilar para Android con
-`CMAKE_INSTALL_PREFIX`. No hay un prebuilt oficial que encaje directamente —
-hay que compilarlo desde fuente.
+The quick way is the official Android SDK, which ships the static `.a` files
+already built and in the layout EY3 expects (`staticlibs/<ABI>/`,
+`3rdparty/libs/<ABI>/`, `jni/include/`):
 
 ```bash
-git clone --branch 4.10.0 --depth 1 https://github.com/opencv/opencv.git
-export OPENCV_BUILD_OUTPUT="$HOME/opencv-android"
+curl -LO https://github.com/opencv/opencv/releases/download/4.10.0/opencv-4.10.0-android-sdk.zip
+unzip -q opencv-4.10.0-android-sdk.zip -d ~/tmp && mv ~/tmp/OpenCV-android-sdk ~/opencv-android-full
+export OPENCV_BUILD_OUTPUT="$HOME/opencv-android-full"
 ```
 
-Repite este bloque **una vez por cada `ANDROID_ABI` que quieras soportar**
-(normalmente basta con `arm64-v8a`; añade `x86_64` si vas a probar en
-emulador), apuntando siempre al mismo `OPENCV_BUILD_OUTPUT`:
+`$OPENCV_BUILD_OUTPUT/sdk/native` is what you pass as `-DOPENCV_DIR` when
+configuring an Android build.
+
+> **It needs `core`, `imgproc`, `imgcodecs`, `objdetect` and `dnn`** (plus
+> `features2d`, `calib3d` and `flann` for `ey3-orb-demo`). `HeadTracker` uses
+> YuNet, which lives in `objdetect` and runs on `dnn`: a trimmed build
+> without those two compiles everything else but not the head tracking. If
+> you build OpenCV from source instead of using the official SDK, add them to
+> `-DBUILD_LIST` and install with `CMAKE_INSTALL_PREFIX` pointing at
+> `$OPENCV_BUILD_OUTPUT` -- but expect it to be by far the slowest step of
+> the whole setup, and cache that directory between CI builds.
+
+## 6. Building
+
+The library and the apps are separate builds. Install the library once:
 
 ```bash
-cmake opencv -B build-opencv-arm64 -G Ninja \
-  -DBUILD_opencv_ittnotify=OFF -DBUILD_ITT=OFF -DCV_DISABLE_OPTIMIZATION=ON \
-  -DWITH_TBB=ON -DANDROID_ARM_NEON=ON -DWITH_CUDA=OFF -DWITH_OPENCL=ON \
-  -DWITH_OPENCLAMDFFT=OFF -DWITH_OPENCLAMDBLAS=OFF -DWITH_VA_INTEL=OFF \
-  -DCPU_BASELINE_DISABLE=ON -DENABLE_SSE=OFF -DENABLE_SSE2=OFF \
-  -DBUILD_TESTING=OFF -DBUILD_PERF_TESTS=OFF -DBUILD_TESTS=OFF \
-  -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_EXAMPLES=OFF -DBUILD_DOCS=OFF \
-  -DBUILD_opencv_apps=OFF -DBUILD_SHARED_LIBS=OFF -DOpenCV_STATIC=ON \
-  -DWITH_1394=OFF -DWITH_ARITH_DEC=OFF -DWITH_ARITH_ENC=OFF -DWITH_CUBLAS=OFF \
-  -DWITH_CUFFT=OFF -DWITH_FFMPEG=OFF -DWITH_GDAL=OFF -DWITH_GSTREAMER=OFF \
-  -DWITH_GTK=OFF -DWITH_HALIDE=OFF -DWITH_JASPER=OFF -DWITH_NVCUVID=OFF \
-  -DWITH_OPENEXR=OFF -DWITH_PROTOBUF=OFF -DWITH_PTHREADS_PF=OFF \
-  -DWITH_QUIRC=OFF -DWITH_V4L=OFF -DWITH_WEBP=OFF \
-  -DBUILD_LIST=core,features2d,flann,imgcodecs,imgproc,stitching \
-  -DANDROID_NDK="$ANDROID_NDK" \
+./scripts/install-sdk.sh          # EY3_PREFIX=$HOME/.local to install without root
+```
+
+and then build any app -- the examples in `apps/`, `templates/ey3-starter`,
+or your own -- from its own directory:
+
+```bash
+cd apps/ey3-maze-fishtank
+cmake -S android -B build-android -G Ninja \
   -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK/build/cmake/android.toolchain.cmake" \
-  -DANDROID_NATIVE_API_LEVEL=android-24 \
-  -DBUILD_JAVA=OFF -DBUILD_ANDROID_EXAMPLES=OFF -DBUILD_ANDROID_PROJECTS=OFF \
-  -DANDROID_STL=c++_shared \
-  -DCMAKE_INSTALL_PREFIX:PATH="$OPENCV_BUILD_OUTPUT" \
-  -DANDROID_ABI=arm64-v8a
-
-ninja -C build-opencv-arm64
-ninja -C build-opencv-arm64 install
+  -DSDK_VERSION=34.0.0 \
+  -DANDROID_PLATFORM=android-24 \
+  -DANDROID_ABI=arm64-v8a \
+  -DOPENCV_DIR="$OPENCV_BUILD_OUTPUT/sdk/native"
+cmake --build build-android --target ey3-maze-fishtank-unsigned
 ```
 
-Al terminar, `$OPENCV_BUILD_OUTPUT/sdk/native` es el valor que se pasa como
-`-DOPENCV_DIR` al configurar EY3.
+The `-unsigned` target needs no keystore and is enough to check that
+everything compiles and packages. `-apk` (signed) and `-run` (install over
+`adb`) only make sense with a keystore configured and, for `-run`, a device
+attached -- which a CI runner normally has neither of.
 
-> Compilar OpenCV es, con diferencia, el paso más lento de todo el setup
-> (puede tardar bastante más que instalar NDK/SDK). Tenlo en cuenta al
-> planificar el tiempo de la primera ejecución del pipeline de CI — conviene
-> cachear `$OPENCV_BUILD_OUTPUT` entre builds.
-
-## 6. Compilar EY3 (validación en dos etapas)
-
-### Etapa 1 — núcleo sin OpenCV (`EY3_WITH_CV=OFF`)
-
-Valida toolchain + `Engine`/`Renderer` sin necesidad de haber compilado
-OpenCV todavía:
+For the library itself, the root `CMakeLists.txt` cross-compiles the engine
+for Android without building any app, which is the cheapest check that a
+change still builds there:
 
 ```bash
 cmake -B build -G Ninja \
   -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK/build/cmake/android.toolchain.cmake" \
-  -DSDK_VERSION=34.0.0 \
-  -DANDROID_PLATFORM=android-24 \
-  -DANDROID_ABI=arm64-v8a \
-  -DEY3_WITH_CV=OFF
-
-ninja -C build ey3-triangle-unsigned
+  -DANDROID_PLATFORM=android-24 -DANDROID_ABI=arm64-v8a \
+  -DOPENCV_DIR="$OPENCV_BUILD_OUTPUT/sdk/native"
+ninja -C build
 ```
 
-Si esto compila, el core (motor, render, EGL/GLES3, delta-time) es sano en
-el entorno nuevo, sin que OpenCV interfiera en el diagnóstico.
+`ey3-triangle` is the example to build when checking a new environment end to
+end: if it packages, the core (engine, renderer, EGL/GLES3, delta time) is
+sound. `ey3-maze-fishtank` additionally proves `objdetect`/`dnn`, since it is
+the only one using `HeadTracker`.
 
-### Etapa 2 — con visión por computador (`EY3_WITH_CV=ON`)
+> Compiling and packaging is not the same as validating at runtime. The
+> camera and the head tracking can only really be checked on a device: CI can
+> guarantee the project builds on every change, it does not replace a manual
+> test before calling a release good.
 
-```bash
-cmake -B build-cv -G Ninja \
-  -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK/build/cmake/android.toolchain.cmake" \
-  -DSDK_VERSION=34.0.0 \
-  -DANDROID_PLATFORM=android-24 \
-  -DANDROID_ABI=arm64-v8a \
-  -DOPENCV_DIR="$OPENCV_BUILD_OUTPUT/sdk/native" \
-  -DEY3_WITH_CV=ON
-
-ninja -C build-cv ey3-triangle-unsigned ey3-background-img-unsigned ey3-orb-demo-unsigned
-```
-
-Los targets `-unsigned` no requieren keystore y son suficientes para
-validar que compila y empaqueta. Los targets `-apk` (firmados) y `-run`
-(instalación vía `adb`) solo tienen sentido con un keystore configurado y,
-para `-run`, un dispositivo/emulador conectado — algo que normalmente no
-está disponible en un runner de CI sin hardware o emulador dedicado.
-
-> Compilar y empaquetar no es lo mismo que validar en tiempo de ejecución.
-> El fix del bug de `camera.cpp` y la cámara en general solo se pueden
-> comprobar de verdad en un dispositivo real con cámara — el CI puede
-> garantizar que el proyecto compila en cada cambio, pero no sustituye una
-> prueba manual en dispositivo antes de dar por buena una release.
-
-## 7. Variables de entorno — resumen para el pipeline
+## 7. Environment variables -- summary for the pipeline
 
 ```bash
-export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64   # ruta Ubuntu
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64   # Ubuntu path
 export ANDROID_HOME=$HOME/android-sdk
 export ANDROID_NDK=$ANDROID_HOME/ndk/27.2.12479018
-export OPENCV_BUILD_OUTPUT=$HOME/opencv-android        # solo si EY3_WITH_CV=ON
+export OPENCV_BUILD_OUTPUT=$HOME/opencv-android-full   # SDK with objdetect and dnn
 export PATH="$JAVA_HOME/bin:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
 ```
 
-### 7.1 Trampa: las variables se congelan al configurar, no al compilar
+### 7.1 The variables are read while configuring, not while building
 
-Los `CMakeLists.txt` usan `$ENV{ANDROID_HOME}` y `$ENV{JAVA_HOME}`, que CMake lee
-**en el momento de configurar** y escribe tal cual dentro de las reglas de
-compilación. Si configuras desde una shell que no las tiene exportadas, no
-falla nada en ese momento: las reglas quedan con rutas rotas y el error
-aparece mucho después, al compilar.
+`ANDROID_HOME` and `JAVA_HOME` are looked up when you run `cmake -B build`,
+not on every compile. Exporting them afterwards fixes nothing: configure
+again from a shell that already has them.
 
-Síntomas concretos vistos:
-
-```
-/bin/sh: línea 1: /build-tools/34.0.0/aapt: No existe el fichero o el directorio
-cd .../build && /bin/keytool -genkeypair ...
-```
-
-Es decir, `${BUILD_TOOLS}` quedó como `/build-tools/34.0.0` (con `ANDROID_HOME`
-vacío) y `keytool` como `/bin/keytool` (con `JAVA_HOME` vacío).
-
-Dos consecuencias prácticas:
-
-1. **Exportar las variables después no arregla nada.** Hay que volver a
-   configurar desde una shell que ya las tenga:
-   `ANDROID_HOME=... JAVA_HOME=... cmake -S . -B build`.
-2. **Reconfigurar con valores distintos rompe la regla del keystore.** Al
-   cambiar la línea de comandos, ninja considera que `release.keystore` está
-   desactualizado y reintenta `keytool -genkeypair`, que falla con *"No se ha
-   generado el par de claves, el alias \<alias\> ya existe"* y detiene la
-   compilación. Se sale de ahí borrando el keystore (ojo: cambia la clave de
-   firma) o, mejor, configurando siempre con las mismas variables.
-
-Pendiente de revisar: resolver `aapt`/`zipalign`/`keytool` con `find_program()`
-y guardarlos en la caché, y hacer que la regla del keystore no se reintente si
-el fichero ya existe. Eso quitaría la dependencia del entorno en el momento de
-configurar y ambos síntomas de arriba.
+Configuring without them fails immediately, with a message naming what is
+missing -- `cmake/ey3-android-app.cmake` resolves `aapt`, `zipalign`,
+`keytool` and `jarsigner` with `find_program` and checks that the
+`android.jar` exists.

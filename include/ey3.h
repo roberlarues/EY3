@@ -13,6 +13,8 @@
 #include "renderer.h"
 #include "renderizable.h"
 #include "shader.h"
+#include "vec3.h"
+#include "mat4.h"
 #include "texture.h"
 #include "asset_loader.h"
 #include "cmd_handler.h"
@@ -24,13 +26,12 @@
 #include "log.h"
 #include "background.h"
 
-#ifdef EY3_WITH_CV
 #include "camera_view.h"
+#include "head_tracker.h"
 #ifdef __ANDROID__
 #include "camera_android.h"
 #else
 #include "camera_desktop.h"
 #endif // __ANDROID__
-#endif // EY3_WITH_CV
 
 #endif // EY3_H

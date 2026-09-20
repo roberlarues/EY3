@@ -44,7 +44,7 @@ bool Camera::open(CameraFacing cameraFacing, int32_t cameraWidth, int32_t camera
 
 	frameWidth = (int32_t) capture.get(CAP_PROP_FRAME_WIDTH);
 	frameHeight = (int32_t) capture.get(CAP_PROP_FRAME_HEIGHT);
-	LOGI("Camara opened! %dx%d", frameWidth, frameHeight);
+	LOGI("Camera opened: %dx%d", frameWidth, frameHeight);
 
 	loaded = true;
 	opened = true;
@@ -101,6 +101,10 @@ int32_t Camera::getFrameWidth() {
 
 int32_t Camera::getFrameHeight() {
 	return frameHeight;
+}
+
+float Camera::getFieldOfView() {
+	return 0.0f;   // unknown: nothing in V4L2 reports the optics
 }
 
 int32_t Camera::getImageRotation() {

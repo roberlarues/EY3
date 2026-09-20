@@ -1,9 +1,0 @@
-@PACKAGE_INIT@
-
-include(CMakeFindDependencyMacro)
-find_dependency(glfw3)
-if(@EY3_WITH_CV@)
-	find_dependency(OpenCV COMPONENTS core imgproc imgcodecs videoio features calib flann)
-endif()
-
-include("${CMAKE_CURRENT_LIST_DIR}/ey3Targets.cmake")

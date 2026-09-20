@@ -6,7 +6,7 @@
 
 using namespace ey3;
 
-Renderer::Renderer(): window(nullptr), enabled(false) { }
+Renderer::Renderer(): window(nullptr), enabled(false), contextGeneration(0) { }
 
 Renderer::~Renderer() {
 	disable();
@@ -47,6 +47,8 @@ void Renderer::enable(IWindow* window) {
 	glEnable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	contextGeneration++;
 
 	// Init elements
 	for (int i = 0; i < renderizableElements.size(); i++) {
@@ -121,4 +123,12 @@ int32_t Renderer::getWidth() {
 
 int32_t Renderer::getHeight() {
 	return height;
+}
+
+IWindow* Renderer::getWindow() {
+	return window;
+}
+
+int32_t Renderer::getContextGeneration() {
+	return contextGeneration;
 }

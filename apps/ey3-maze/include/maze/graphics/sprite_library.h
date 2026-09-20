@@ -24,6 +24,7 @@ class SpriteLibrary {
 		std::map<std::string, SpriteSheet*> sheets;
 		AssetLoader* assetLoader;
 		bool ready;
+		int32_t contextGeneration;
 
 	public:
 		SpriteLibrary();

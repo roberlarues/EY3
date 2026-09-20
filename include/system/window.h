@@ -27,6 +27,13 @@ namespace ey3 {
 
 			virtual int32_t getWidth() = 0;
 			virtual int32_t getHeight() = 0;
+
+			// Physical size of the drawing surface, in millimetres, or 0
+			// when the platform cannot tell. Anything that has to reason in
+			// real world units needs this -- a head-coupled perspective, for
+			// instance, has to know how big its window on the world is.
+			virtual float getPhysicalWidthMm() { return 0.0f; }
+			virtual float getPhysicalHeightMm() { return 0.0f; }
 	};
 }
 

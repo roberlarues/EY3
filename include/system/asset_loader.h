@@ -3,9 +3,7 @@
 
 #include <string>
 
-#ifdef EY3_WITH_CV
 #include <opencv2/opencv.hpp>
-#endif // EY3_WITH_CV
 
 namespace ey3 {
 
@@ -17,9 +15,7 @@ namespace ey3 {
 			AssetLoader();
 			virtual ~AssetLoader();
 			const std::string loadStringAsset(const char* assetPath);
-#ifdef EY3_WITH_CV
 			cv::Mat loadImageAsset(const char* assetPath);
-#endif // EY3_WITH_CV
 	};
 }
 

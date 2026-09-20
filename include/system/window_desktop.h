@@ -43,6 +43,8 @@ namespace ey3 {
 			void pollEvents() override;
 			int32_t getWidth() override;
 			int32_t getHeight() override;
+			float getPhysicalWidthMm() override;
+			float getPhysicalHeightMm() override;
 	};
 }
 

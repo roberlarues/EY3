@@ -26,7 +26,7 @@ GLuint Shader::loadShader( GLenum type, const char *shaderSrc) {
 	if (!compiled) {
 		GLchar infoLog[1024];
 		glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-		LOGE("Error al compilar el shader: %s", infoLog);
+		LOGE("Could not compile the shader: %s", infoLog);
 		glDeleteShader(shader);
 		return 0;
 	}
@@ -44,7 +44,7 @@ void Shader::init(AssetLoader* assetLoader, const char* vShader, const char* fSh
 	programObject = glCreateProgram();
 
 	if ( programObject == 0 ) {
-		LOGE("Error al crear el program shader");
+		LOGE("Could not create the shader program");
 		return;
 	}
 
@@ -60,9 +60,9 @@ void Shader::init(AssetLoader* assetLoader, const char* vShader, const char* fSh
     glDeleteShader(fragmentShader);
 
 	if ( !linked ) {
-		GLint infoLen = 0;
-		glGetProgramiv( programObject, GL_INFO_LOG_LENGTH, &infoLen );
-		LOGE("Error al enlazar los shaders");
+		GLchar infoLog[1024];
+		glGetProgramInfoLog( programObject, 1024, NULL, infoLog );
+		LOGE("Could not link the shaders: %s", infoLog);
 
 		glDeleteProgram ( programObject );
 		return ;
@@ -79,7 +79,7 @@ void Shader::init() {
 	programObject = glCreateProgram();
 
 	if ( programObject == 0 ) {
-		LOGE("Error al crear el program shader");
+		LOGE("Could not create the shader program");
 		return;
 	}
 
@@ -95,9 +95,9 @@ void Shader::init() {
     glDeleteShader(fragmentShader);
 
 	if ( !linked ) {
-		GLint infoLen = 0;
-		glGetProgramiv( programObject, GL_INFO_LOG_LENGTH, &infoLen );
-		LOGE("Error al enlazar los shaders");
+		GLchar infoLog[1024];
+		glGetProgramInfoLog( programObject, 1024, NULL, infoLog );
+		LOGE("Could not link the shaders: %s", infoLog);
 
 		glDeleteProgram ( programObject );
 		return ;

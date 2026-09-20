@@ -1,74 +1,74 @@
-# EY3 (project under developpement)
-A simple library to facilitate the use of OpenCV and OpenGL in Android using only c++.
+# EY3
 
-## Usage
-You may find useful this library if you are interested in the following characteristics:
-* Easy developement with OpenCV in c++ for Android (specially useful for high-performance operations in real-time) without struggling too much in Android configurations.
-* Build an app with [native_app_glue](https://developer.android.com/ndk/samples/sample_na "android_app_glue").
-* Minimum use of Java or Kotlin code and views, just c++ and OpenGL.
-* Build an app without Android Studio or an IDE.
-* Games from scratch.
+OpenCV and OpenGL ES on Android, from C++ alone: no Java, no Gradle, no IDE.
 
-You shouldn't use this library if you plan to build a typical app with java, material, views and all of these stuff. This has been created mainly to made quick experiments in Android with OpenCV and OpenGL.
+EY3 is a small library for **quick computer-vision and graphics experiments on
+a phone**. You write `main()`; it gives you a GL context, touch events, the
+camera as a `cv::Mat`, and an APK at the end of `ninja`. The same code builds
+and runs on the desktop, which is where most of the work happens.
 
-## Pre-requisites
-See [doc/environment-setup.md](doc/environment-setup.md) for step-by-step install instructions (Arch Linux dev machine + Ubuntu CI).
+It is **not a game engine**: no sound, no text rendering, no physics, no
+editor. The whole API is about a dozen classes and fits in one page --
+[doc/ey3-api.md](doc/ey3-api.md).
 
-* [Java 8+](https://www.java.com)
-* [Android SDK 29+](https://developer.android.com/studio)
-* [Android NDK r21+](https://developer.android.com/ndk/)
-* Make sure you have the following environement variables:
- * JAVA_HOME
- * ANDROID_HOME
-* [cmake](https://cmake.org)
-* [ninja](https://ninja-build.org/)
-* [OpenCV 4+](https://opencv.org)
- * Use cmake to configure OpenCV build for android with everything you need. You can modify the following command, replacing the content between brackets:
+## Why you might want it
+
+* Real-time OpenCV in C++ on Android, without fighting the Android build.
+* The same source running on your machine, so you can iterate without a device.
+* An APK straight from a CMake target: `aapt`, `jarsigner`, `zipalign`.
+* No Android Studio, no IDE -- it builds over SSH.
+
+If you are writing an ordinary app with views and Material, this is the wrong
+tool. If you are writing a game, something like raylib will take you further.
+
+## Installing it
+
+Java, the Android SDK and NDK, CMake, Ninja, and an OpenCV Android SDK **built
+with `objdetect` and `dnn`**; [doc/environment-setup.md](doc/environment-setup.md)
+has every step.
+
 ```bash
-    cmake [OPENCV SOURCE] -B [OPENCV BUILD OUTPUT] -DBUILD_opencv_ittnotify=OFF -DBUILD_ITT=OFF -DCV_DISABLE_OPTIMIZATION=ON -DWITH_TBB=ON -DANDROID_ARM_NEON=ON -DWITH_CUDA=OFF -DWITH_OPENCL=ON -DWITH_OPENCLAMDFFT=OFF -DWITH_OPENCLAMDBLAS=OFF -DWITH_VA_INTEL=OFF -DCPU_BASELINE_DISABLE=ON -DENABLE_SSE=OFF -DENABLE_SSE2=OFF -DBUILD_TESTING=OFF -DBUILD_PERF_TESTS=OFF -DBUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_EXAMPLES=OFF -DBUILD_DOCS=OFF -DBUILD_opencv_apps=OFF -DBUILD_SHARED_LIBS=OFF -DOpenCV_STATIC=ON -DWITH_1394=OFF -DWITH_ARITH_DEC=OFF -DWITH_ARITH_ENC=OFF -DWITH_CUBLAS=OFF -DWITH_CUFFT=OFF -DWITH_FFMPEG=OFF -DWITH_GDAL=OFF -DWITH_GSTREAMER=OFF -DWITH_GTK=OFF -DWITH_HALIDE=OFF -DWITH_JASPER=OFF -DWITH_NVCUVID=OFF -DWITH_OPENEXR=OFF -DWITH_PROTOBUF=OFF -DWITH_PTHREADS_PF=OFF -DWITH_QUIRC=OFF -DWITH_V4L=OFF -DWITH_WEBP=OFF -DBUILD_LIST=core,features2d,flann,imgcodecs,imgproc,stitching -DANDROID_NDK=[ANDROID NDK PATH] -DCMAKE_TOOLCHAIN_FILE=[ANDROID NDK PATH]/build/cmake/android.toolchain.cmake -DANDROID_NATIVE_API_LEVEL=android-29 -DBUILD_JAVA=OFF -DBUILD_ANDROID_EXAMPLES=OFF -DBUILD_ANDROID_PROJECTS=OFF -DANDROID_STL=c++_shared -DCMAKE_INSTALL_PREFIX:PATH=[OPENCV BUILD OUTPUT] -DANDROID_ABI=[YOUR TARGET ABI] -G Ninja
+./scripts/install-sdk.sh
 ```
- * Build it:
-`ninja .`
-* Android device running android-19+
 
-## Getting started
-1. Use cmake to configure EY3 build, passing the following arguments:
- * -DCMAKE_TOOLCHAIN_FILE: Path to the [NDK_PATH]/build/cmake/android.toolchain.cmake
- * -DSDK_VERSION: SDK version to use (i.e. 29.0.1)
- * -DANDROID_PLATFORM: your android target platform (i.e. android-29)
- * -DANDROID_ABI: your target android abi (i.e. arm64-v8a)
- * -DOPENCV_DIR: path to your built OpenCV path + /sdk/native
+That installs the desktop library (headers, `libey3.so` and an
+`ey3Config.cmake`) and, for Android, one shared copy of the engine sources
+and the CMake modules that build them. Everything else -- the examples below,
+the starter, your own projects -- is a separate project that finds ey3 that
+way. Nothing vendors a copy of it.
 
- Optional arguments:
- * -DLOGNAME: name to use for logging
+## Examples
 
- Optional arguments to sign sample apks:
- * -DKEYSTORE: keystore to sign your app
- * -DSTOREPASS: keystore password
- * -DKEYALIAS: key alias
- * -DKEYPASS: key password
- * -DCOMPANY: your company name
+Each one is a standalone project built against the installed library, with
+its own README explaining what it shows and how to run it.
 
-2. Compile it with ninja:
+| Example | What it shows |
+| --- | --- |
+| [ey3-triangle](apps/ey3-triangle) | The smallest thing that draws: one `Renderizable`, a shader pair, touch input. |
+| [ey3-background-img](apps/ey3-background-img) | An image loaded from `assets/` and stretched across the screen. |
+| [ey3-orb-demo](apps/ey3-orb-demo) | ORB feature matching on live camera frames -- the computer-vision side. |
+| [ey3-maze](apps/ey3-maze) | A 2D maze: sprite sheets, levels read from `assets/`, and a structure worth copying. |
+| [ey3-maze-fishtank](apps/ey3-maze-fishtank) | The same maze in 3D under a head-coupled perspective: the front camera follows your eyes and the screen becomes a window into a box. What the library was built for. |
+
+## Starting your own project
+
+Copy [templates/ey3-starter](templates/ey3-starter) anywhere outside this
+repository and build it -- its README has the details. It is the same layout
+every example uses: your code in `src/` and `include/`, the two entry points
+in `desktop/` and `android/`, and one `app.cmake` both builds read.
+
+## Working on the library itself
+
 ```bash
-cd [cmake output]
-ninja ey3
+cmake -S desktop -B build-desktop -G Ninja && cmake --build build-desktop
 ```
- It will generate the static libs **libey3.a** and **libnative_app_glue.a**, which you can add and link to your project to start building your native app.
- You can find some examples in [apps](ey3/tree/master/apps) folder. To build them, use ninja with the following targets:
- * [lib name]-unsigned: generates the unsigned apk
- * [lib name]-apk: generates signed apk
- * [lib name]-run: installs the apk to the current device
 
- where [lib name] refers to an available sample app:
- *  [ey3-triangle](ey3/tree/master/apps/ey3-triangle): an example that displays a triangle in the middle of the screen that changes its color depending on the user touch region.
- *  [ey3-background-img](ey3/tree/master/apps/ey3-background-img): an example that loads an image from the assets folder and displays it streched to the screen.
- *  [ey3-orb-demo](ey3/tree/master/ey3-orb-demo): an example of feature matching with ORB in real-time.
- *  [ey3-maze](ey3/tree/master/apps/ey3-maze): a small maze game, showing sprites and movement: a ball rolls from the entrance to the exit, driven by touching the top, bottom, left or right region of the screen. Needs OpenCV, only to load its sprite sheets from PNG.
+builds the desktop library, and the root `CMakeLists.txt` cross-compiles the
+same engine for Android, which is the check that it still builds there. Both
+are only for developing ey3; apps never use them directly.
 
+## Licence
 
-## External libraries
-This software uses the following external libraries:
-
-- OpenCV: Licensed under [Apache 2](https://github.com/opencv/opencv/blob/master/LICENSE) license
-  Website: https://opencv.org
+EY3 is Apache 2.0 -- see [LICENSE](LICENSE). It is built on OpenCV
+(https://opencv.org, Apache 2.0); [doc/third-party.md](doc/third-party.md)
+lists everything it uses and what shipping a build of it involves.

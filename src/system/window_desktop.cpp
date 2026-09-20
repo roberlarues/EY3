@@ -135,6 +135,39 @@ int32_t WindowDesktop::getHeight() {
 	return height;
 }
 
+namespace {
+	// Millimetres per pixel of the primary monitor, or 0 if GLFW doesn't know.
+	float millimetresPerPixel(bool horizontal) {
+		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+		if (monitor == nullptr) {
+			return 0.0f;
+		}
+
+		int widthMm = 0, heightMm = 0;
+		glfwGetMonitorPhysicalSize(monitor, &widthMm, &heightMm);
+
+		const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+		if (mode == nullptr) {
+			return 0.0f;
+		}
+
+		int sizeMm = horizontal ? widthMm : heightMm;
+		int sizePx = horizontal ? mode->width : mode->height;
+		if (sizeMm <= 0 || sizePx <= 0) {
+			return 0.0f;
+		}
+		return (float) sizeMm / (float) sizePx;
+	}
+}
+
+float WindowDesktop::getPhysicalWidthMm() {
+	return width * millimetresPerPixel(true);
+}
+
+float WindowDesktop::getPhysicalHeightMm() {
+	return height * millimetresPerPixel(false);
+}
+
 /*
  * CALLBACKS
  */

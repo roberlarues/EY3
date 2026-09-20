@@ -1,19 +1,16 @@
 #include "maze/graphics/sprite_sheet.h"
 
-#include <opencv2/imgproc.hpp>
-
 SpriteSheet::SpriteSheet() : frameCount(1) {
 }
 
 bool SpriteSheet::load(AssetLoader* assetLoader, const char* assetPath) {
+	this->assetPath = assetPath;
+
 	cv::Mat image = assetLoader->loadImageAsset(assetPath);
 	if (image.empty()) {
 		LOGE("Sprite sheet not loaded: %s", assetPath);
 		return false;
 	}
-
-	// loadImageAsset hands over BGR, which is OpenCV's order, not GL's.
-	cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
 
 	// A sheet is a horizontal strip of square frames.
 	frameCount = image.cols / image.rows;
@@ -24,8 +21,26 @@ bool SpriteSheet::load(AssetLoader* assetLoader, const char* assetPath) {
 	}
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	texture.generate(image.ptr(), image.cols, image.rows);
+	texture.generate(image.ptr(), image.cols, image.rows,
+	                 image.channels() == 4 ? GL_RGBA : GL_RGB);
 	return true;
+}
+
+bool SpriteSheet::reload(AssetLoader* assetLoader) {
+	invalidate();
+
+	if (assetPath.empty()) {
+		return false;   // a live source has no file behind it
+	}
+
+	// A copy: load() assigns to the member, and handing it a pointer into
+	// its own buffer would be a self-assignment waiting to bite.
+	const std::string path = assetPath;
+	return load(assetLoader, path.c_str());
+}
+
+void SpriteSheet::invalidate() {
+	texture.invalidate();
 }
 
 void SpriteSheet::bind() const {

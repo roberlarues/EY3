@@ -12,6 +12,7 @@ static const char CELL_WALL = '#';
 static const char CELL_FLOOR = '.';
 static const char CELL_EXIT = 'X';
 static const char CELL_START = '@';
+static const char CELL_EMPTY = ' ';
 
 // How long the winning ball stays on the exit before the next level.
 static const float WIN_PAUSE = 1.5f;
@@ -59,8 +60,14 @@ void MazeGame::buildLevel() {
 				case CELL_FLOOR:
 					level->add(new Floor(level, col, row));
 					break;
+				case CELL_EMPTY:
+					break;   // a hole in the level, on purpose
 				default:
-					break;   // anything else leaves the cell empty
+					// The levels are text files edited by hand, so say so
+					// rather than quietly drawing nothing.
+					LOGW("Level %s: unknown character '%c' at column %d, row %d",
+					     data.getName().c_str(), data.getCell(col, row), col, row);
+					break;
 			}
 		}
 	}

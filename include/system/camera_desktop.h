@@ -46,6 +46,13 @@ namespace ey3 {
 			int32_t getFrameHeight();
 			int32_t getImageRotation();
 
+			/**
+			 * Field of view across the sensor's longer side, in degrees.
+			 * Always 0 here: V4L2 webcams do not report their optics, so a
+			 * caller keeps whatever default it has. Android does report it.
+			 */
+			float getFieldOfView();
+
 			bool hasPermission();
 			void requestPermission();
 	};

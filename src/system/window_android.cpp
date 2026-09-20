@@ -1,3 +1,5 @@
+#include <jni.h>
+
 #include "window_android.h"
 
 #include <string>
@@ -29,13 +31,17 @@ bool WindowAndroid::createSurface() {
 		return false;
 	}
 
-	// Init EGL
+	// Init EGL. The depth buffer is not optional: without it glEnable(
+	// GL_DEPTH_TEST) silently does nothing and whatever is drawn last wins,
+	// which in 3D means seeing the far side of everything. 24 bits first,
+	// 16 as a fallback for devices that offer nothing better.
 	EGLint attribs[] = {
 		EGL_SURFACE_TYPE,
 		EGL_WINDOW_BIT,
 		EGL_BLUE_SIZE, 8,
 		EGL_GREEN_SIZE, 8,
 		EGL_RED_SIZE, 8,
+		EGL_DEPTH_SIZE, 24,
 		EGL_NONE
 	};
 	display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -47,13 +53,22 @@ bool WindowAndroid::createSurface() {
 		LOGI("eglInitialize() returned error %d", eglGetError());
 	}
 
-	EGLConfig config;
+	EGLConfig config = nullptr;
 	EGLint numConfigs;
 	eglChooseConfig(display, attribs, &config, 1, &numConfigs);
+	if (numConfigs == 0) {
+		LOGW("No EGLConfig with a 24 bit depth buffer; asking for 16");
+		attribs[9] = 16;   // the value that follows EGL_DEPTH_SIZE
+		eglChooseConfig(display, attribs, &config, 1, &numConfigs);
+	}
 	LOGI("Num eglConfigs: %d", numConfigs);
 	if (numConfigs == 0) {
 		LOGI("eglChooseConfig() returned error %d", eglGetError());
 	}
+
+	EGLint depthBits = 0;
+	eglGetConfigAttrib(display, config, EGL_DEPTH_SIZE, &depthBits);
+	LOGI("EGL depth buffer: %d bits", depthBits);
 
 	if (config == nullptr) {
 		LOGW("Unable to initialize EGLConfig");
@@ -126,6 +141,157 @@ int32_t WindowAndroid::getWidth() {
 
 int32_t WindowAndroid::getHeight() {
 	return height;
+}
+
+namespace {
+	// Millimetres per pixel from the screen density the activity was
+	// configured with, or 0 when Android reports no usable value.
+	/**
+	 * The density bucket Android uses to pick resources (160, 240, 320, 420,
+	 * 480...). Always available, but quantised: on a panel of 401 real dpi it
+	 * says 480, which is a fifth off.
+	 */
+	float densityBucketDpi(android_app* app) {
+		if (app == nullptr || app->config == nullptr) {
+			return 0.0f;
+		}
+
+		int32_t density = AConfiguration_getDensity(app->config);
+		if (density == ACONFIGURATION_DENSITY_DEFAULT || density == ACONFIGURATION_DENSITY_NONE
+			|| density == ACONFIGURATION_DENSITY_ANY || density <= 0) {
+			return 0.0f;
+		}
+		return (float) density;
+	}
+
+	/**
+	 * The panel's real dots per inch, from DisplayMetrics.
+	 *
+	 * Reached by calling the framework through JNI -- the activity and the VM
+	 * come with ANativeActivity, so this needs no Java of our own and the
+	 * manifest stays android:hasCode="false". android_main runs on its own
+	 * thread, hence the attach.
+	 *
+	 * Returns false if anything goes wrong, and the caller falls back to the
+	 * bucket. That also covers the manufacturers who fill these fields with
+	 * nonsense, which the caller checks for.
+	 */
+	bool displayMetricsDpi(android_app* app, float& xDpi, float& yDpi) {
+		if (app == nullptr || app->activity == nullptr || app->activity->vm == nullptr) {
+			return false;
+		}
+
+		// Attach only if this thread is not attached already: detaching one
+		// that somebody else attached would pull the rug from under them.
+		JavaVM* vm = app->activity->vm;
+		JNIEnv* env = nullptr;
+		bool attached = false;
+		if (vm->GetEnv((void**) &env, JNI_VERSION_1_6) != JNI_OK) {
+			if (vm->AttachCurrentThread(&env, nullptr) != JNI_OK || env == nullptr) {
+				return false;
+			}
+			attached = true;
+		}
+
+		bool ok = false;
+		jclass activityClass = env->GetObjectClass(app->activity->clazz);
+		jobject resources = nullptr;
+		jclass resourcesClass = nullptr;
+		jobject metrics = nullptr;
+		jclass metricsClass = nullptr;
+
+		jmethodID getResources = env->GetMethodID(activityClass, "getResources",
+			"()Landroid/content/res/Resources;");
+		if (getResources != nullptr) {
+			resources = env->CallObjectMethod(app->activity->clazz, getResources);
+		}
+		if (resources != nullptr) {
+			resourcesClass = env->GetObjectClass(resources);
+			jmethodID getMetrics = env->GetMethodID(resourcesClass, "getDisplayMetrics",
+				"()Landroid/util/DisplayMetrics;");
+			if (getMetrics != nullptr) {
+				metrics = env->CallObjectMethod(resources, getMetrics);
+			}
+		}
+		if (metrics != nullptr) {
+			metricsClass = env->GetObjectClass(metrics);
+			jfieldID xField = env->GetFieldID(metricsClass, "xdpi", "F");
+			jfieldID yField = env->GetFieldID(metricsClass, "ydpi", "F");
+			if (xField != nullptr && yField != nullptr) {
+				xDpi = env->GetFloatField(metrics, xField);
+				yDpi = env->GetFloatField(metrics, yField);
+				ok = true;
+			}
+		}
+
+		// A failed lookup leaves an exception pending, and the next JNI call
+		// on this thread would abort the process if we left it there.
+		if (env->ExceptionCheck()) {
+			env->ExceptionClear();
+			ok = false;
+		}
+
+		// Locals are only freed automatically on returning to Java, which is
+		// not where this thread is going.
+		if (metricsClass != nullptr) env->DeleteLocalRef(metricsClass);
+		if (metrics != nullptr) env->DeleteLocalRef(metrics);
+		if (resourcesClass != nullptr) env->DeleteLocalRef(resourcesClass);
+		if (resources != nullptr) env->DeleteLocalRef(resources);
+		if (activityClass != nullptr) env->DeleteLocalRef(activityClass);
+
+		if (attached) {
+			vm->DetachCurrentThread();
+		}
+		return ok;
+	}
+
+	/**
+	 * Millimetres per pixel, from the real dots per inch when the device
+	 * reports something believable and from the density bucket otherwise.
+	 * Worked out once: neither value changes while the app runs.
+	 */
+	void resolveMillimetresPerPixel(android_app* app, float& xMm, float& yMm) {
+		float bucket = densityBucketDpi(app);
+		float xDpi = 0.0f, yDpi = 0.0f;
+
+		if (displayMetricsDpi(app, xDpi, yDpi) && xDpi > 0.0f && yDpi > 0.0f) {
+			// Believable means "in the same world as the bucket". Some
+			// devices report 160 flat, or four digits; those get dropped.
+			bool sane = bucket <= 0.0f
+				|| (xDpi > bucket * 0.5f && xDpi < bucket * 2.0f
+					&& yDpi > bucket * 0.5f && yDpi < bucket * 2.0f);
+			if (sane) {
+				LOGI("Screen density: %.0fx%.0f real dpi (bucket says %.0f)", xDpi, yDpi, bucket);
+				xMm = 25.4f / xDpi;
+				yMm = 25.4f / yDpi;
+				return;
+			}
+			LOGW("Screen density: ignoring DisplayMetrics (%.0fx%.0f dpi, bucket %.0f)",
+			     xDpi, yDpi, bucket);
+		}
+
+		if (bucket <= 0.0f) {
+			LOGW("Screen density: the device reports none; physical size unknown");
+			xMm = yMm = 0.0f;
+			return;
+		}
+		LOGI("Screen density: %.0f dpi from the density bucket", bucket);
+		xMm = yMm = 25.4f / bucket;
+	}
+}
+
+float WindowAndroid::getPhysicalWidthMm() {
+	if (millimetresPerPixelX < 0.0f) {
+		resolveMillimetresPerPixel(app, millimetresPerPixelX, millimetresPerPixelY);
+	}
+	return width * millimetresPerPixelX;
+}
+
+float WindowAndroid::getPhysicalHeightMm() {
+	if (millimetresPerPixelY < 0.0f) {
+		resolveMillimetresPerPixel(app, millimetresPerPixelX, millimetresPerPixelY);
+	}
+	return height * millimetresPerPixelY;
 }
 
 /*

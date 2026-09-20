@@ -1,50 +1,35 @@
-project(EY3-Triangle)
+# A triangle that changes colour where you touch: the smallest thing that draws.
+#
+# Desktop build. ey3 has to be installed first -- run scripts/install-sdk.sh
+# in the EY3 repository -- and this example is built like any other project
+# using it, from its own directory:
+#
+#   cmake -S . -B build -G Ninja      # -DCMAKE_PREFIX_PATH=... if not in /usr/local
+#   cmake --build build
+#   ./build/ey3-triangle
+#
+# The Android build lives next door in android/. See README.md.
+cmake_minimum_required(VERSION 3.16)
+project(ey3-triangle CXX)
 
-set(LIBNAME "ey3-triangle")
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate")
-# The .so is linked straight into apk-root/, the directory tree aapt packs
-# into the APK further down, so that tree holds the app's native libs and
-# nothing else.
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY apk-root/lib/${ANDROID_ABI})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY apk-root/lib/${ANDROID_ABI})
-	
-# Android main lib
-add_library(${LIBNAME} SHARED src/main.cpp src/program.cpp src/triangle.cpp)
-target_include_directories(${LIBNAME} PUBLIC ${ANDROID_NDK}/sources/android/native_app_glue include)
-ey3_strip_target(${LIBNAME})
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Link Libraries
-target_link_libraries(${LIBNAME}
-	android
-	native_app_glue
-	ey3)
+find_package(ey3 REQUIRED)
 
+# The app's own sources, listed once for both platforms.
+include(${CMAKE_CURRENT_SOURCE_DIR}/app.cmake)
 
-# CUSTOM TARGETS
-add_custom_target(${LIBNAME}-run 
-	COMMAND $ENV{ANDROID_HOME}/platform-tools/adb install -r ${LIBNAME}.apk 
-	DEPENDS ${LIBNAME}.apk
-	COMMENT "Launching ${LIBNAME} APK")
-add_custom_target(${LIBNAME}-apk DEPENDS ${LIBNAME}.apk COMMENT "Creating release APK.")
-add_custom_target(${LIBNAME}-unsigned DEPENDS ${LIBNAME}.unsigned.apk COMMENT "Creating unsigned APK.")
+add_executable(ey3-triangle desktop/main_desktop.cpp ${APP_SOURCES})
+target_include_directories(ey3-triangle PRIVATE include)
+target_link_libraries(ey3-triangle PRIVATE ey3::ey3)
 
-#CUSTOM COMMANDS
-# aapt copies the *contents* of the directory given as its last argument
-# into the APK, keeping their relative paths, which is how lib/<abi>/*.so
-# gets in. That argument must be apk-root and not "." (the build directory
-# itself): "." would also sweep in CMake's object files and, on a rebuild,
-# the APKs the previous run left behind.
-add_custom_command(OUTPUT ${LIBNAME}.unsigned.apk
-	COMMAND ${BUILD_TOOLS}/aapt package -f -M ${PROJECT_SOURCE_DIR}/AndroidManifest.xml --auto-add-overlay -S ${PROJECT_SOURCE_DIR}/res -S ${PROJECT_SOURCE_DIR}/../../res -A ${PROJECT_SOURCE_DIR}/assets -I $ENV{ANDROID_HOME}/platforms/${ANDROID_PLATFORM}/android.jar -F ${LIBNAME}.unsigned.apk apk-root
-	DEPENDS ${LIBNAME}
-	COMMENT "Building apk")
-
-add_custom_command(OUTPUT ${LIBNAME}.signed.apk
-	COMMAND jarsigner -keystore ${CMAKE_BINARY_DIR}/${KEYSTORE}.keystore -sigalg SHA256withRSA -digestalg SHA-256 -storepass ${STOREPASS} -keypass ${KEYPASS} -signedjar ${LIBNAME}.signed.apk ${LIBNAME}.unsigned.apk ${KEYALIAS}
-	DEPENDS ${LIBNAME}.unsigned.apk ${CMAKE_BINARY_DIR}/${KEYSTORE}.keystore
-	COMMENT "Signing APK")
-	
-add_custom_command(OUTPUT ${LIBNAME}.apk 
-	COMMAND ${BUILD_TOOLS}/zipalign -f 4 ${LIBNAME}.signed.apk ${LIBNAME}.apk
-	DEPENDS ${LIBNAME}.signed.apk
-	COMMENT "Calling zipalign")
+# AssetLoader reads from an 'assets' folder next to the executable; the
+# Android build packages that same directory into the APK, so both platforms
+# see the same paths.
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/assets)
+	add_custom_command(TARGET ey3-triangle POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E create_symlink
+			${CMAKE_CURRENT_SOURCE_DIR}/assets $<TARGET_FILE_DIR:ey3-triangle>/assets
+		COMMENT "Linking assets")
+endif()

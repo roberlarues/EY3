@@ -18,6 +18,7 @@ namespace ey3 {
 	class Texture {
 		private:
 			GLuint id;
+			bool generated;
 			GLuint width, height;
 			GLuint internalFormat;
 			GLuint imageFormat;
@@ -29,9 +30,22 @@ namespace ey3 {
 
 		public:
 			Texture();
-			void generate(GLubyte* data, GLuint width, GLuint height);
+
+			/**
+			 * Uploads an image. format is GL_RGB or GL_RGBA; it is remembered,
+			 * so update() keeps using it.
+			 */
+			void generate(GLubyte* data, GLuint width, GLuint height, GLuint format = GL_RGB);
 			void bind() const;
 			void update(GLubyte* data);
+
+			/**
+			 * Forgets the texture's name without deleting anything, for when
+			 * the GL context that held it is gone. Deleting it then would be
+			 * worse than leaking: the same number may already belong to a
+			 * texture of the new context.
+			 */
+			void invalidate();
 	};
 }
 

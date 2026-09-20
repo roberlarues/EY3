@@ -21,6 +21,11 @@ namespace ey3 {
 			int32_t width = 0;
 			int32_t height = 0;
 
+			// Worked out on first use, from the display's real dpi when the
+			// device reports them believably (see window_android.cpp).
+			float millimetresPerPixelX = -1.0f;
+			float millimetresPerPixelY = -1.0f;
+
 		public:
 			WindowAndroid(android_app* app);
 
@@ -32,6 +37,8 @@ namespace ey3 {
 			void pollEvents() override;
 			int32_t getWidth() override;
 			int32_t getHeight() override;
+			float getPhysicalWidthMm() override;
+			float getPhysicalHeightMm() override;
 	};
 }
 

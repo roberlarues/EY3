@@ -40,11 +40,13 @@ namespace ey3 {
 			int32_t cameraWidth, cameraHeight; // Original camera resolution
 			int32_t frameWidth, frameHeight; // Final frame size (swapped from original in portrait)
 			int32_t imageRotation;
+			float fieldOfView;
 			bool loaded = false;
 			bool opened = false;
 			bool permissionRequested = false;
 
 			void loadFrameSize(ACameraMetadata* cameraMetadata);
+			void loadFieldOfView(ACameraMetadata* cameraMetadata);
 		public:
 			Camera();
 			virtual ~Camera();
@@ -58,6 +60,15 @@ namespace ey3 {
 			int32_t getFrameWidth();
 			int32_t getFrameHeight();
 			int32_t getImageRotation();
+
+			/**
+			 * Field of view across the sensor's longer side, in degrees, or
+			 * 0 when the camera does not say. Worked out from the lens's
+			 * focal length and the size of the sensor, both of which
+			 * Camera2 reports, so anything that has to turn pixels into
+			 * angles -- HeadTracker, say -- can stop guessing.
+			 */
+			float getFieldOfView();
 			std::string getFacingCameraId(CameraFacing cameraFacing);
 
 			/**

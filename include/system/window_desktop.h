@@ -1,0 +1,51 @@
+#ifndef EY3WINDOWDESKTOP_H
+#define EY3WINDOWDESKTOP_H
+
+#include "window.h"
+
+struct GLFWwindow;
+
+namespace ey3 {
+
+	// Approximate mobile viewport (dp) used to size desktop windows, so a
+	// desktop run looks like the phone layout it targets. Pick the pair
+	// matching the app's AndroidManifest.xml android:screenOrientation.
+	constexpr int32_t MOBILE_WIDTH_PORTRAIT = 412;
+	constexpr int32_t MOBILE_HEIGHT_PORTRAIT = 915;
+	constexpr int32_t MOBILE_WIDTH_LANDSCAPE = MOBILE_HEIGHT_PORTRAIT;
+	constexpr int32_t MOBILE_HEIGHT_LANDSCAPE = MOBILE_WIDTH_PORTRAIT;
+
+	/**
+	 * IWindow backed by GLFW, requesting an EGL/OpenGL ES 3.0 context so the
+	 * shared renderer/shader code (written against GLES3, "#version 300 es")
+	 * runs unmodified on desktop (Mesa supports GLES natively via EGL).
+	 */
+	class WindowDesktop: public IWindow {
+		private:
+			GLFWwindow* glfwWindow = nullptr;
+			Engine* engine = nullptr;
+			int32_t width;
+			int32_t height;
+
+			static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+			static void cursorPosCallback(GLFWwindow* window, double x, double y);
+			static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+
+		public:
+			WindowDesktop(const char* title, int32_t width, int32_t height);
+			~WindowDesktop();
+
+			void setEngine(Engine* engine) override;
+			bool createSurface() override;
+			void destroySurface() override;
+			bool makeCurrent() override;
+			void swapBuffers() override;
+			void pollEvents() override;
+			int32_t getWidth() override;
+			int32_t getHeight() override;
+			float getPhysicalWidthMm() override;
+			float getPhysicalHeightMm() override;
+	};
+}
+
+#endif // EY3WINDOWDESKTOP_H
